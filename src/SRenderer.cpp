@@ -34,7 +34,7 @@ unsigned int SRenderer::generate_vertex_data() {
 }
 
 void SRenderer::draw_rect(
-        const float g_x, const float g_y, const float width, const float heigth,
+        const float x, const float y, const float width, const float heigth,
         const float rotation,
         unsigned int VAO, 
         Shader *shader, 
@@ -45,7 +45,7 @@ void SRenderer::draw_rect(
     glm::mat4 model = glm::mat4(1.f);
     /* std::cout << "STEP 1:\n" << glm::to_string(model) << std::endl; */
 
-    model = glm::translate(model, glm::vec3(g_x, g_y, 0.f));
+    model = glm::translate(model, glm::vec3(x, y, 0.f));
 
     // translate before rotation to make it rotate from the center
     model = glm::translate(model, glm::vec3(0.5f * width, 0.5f * heigth, 0.f));

@@ -270,7 +270,7 @@ void Game::update(float dt) {
         ball->shader->setBool("shake", true);
         ball->shader->setFloat("shake_strength", shake_strength);
         std::cout << "LEVEL 4!" << std::endl;
-    } else if (LEVEL == 4 && shake_strength > 0.015) {
+    } else if (LEVEL == 4 && shake_strength > 0.020) {
         LEVEL = 5;
         std::cout << "FINAL LEVEL!" << std::endl;
     }
