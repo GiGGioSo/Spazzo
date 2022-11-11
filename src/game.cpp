@@ -1,16 +1,28 @@
 #include "game.h"
 #include "shader.h"
 #include "SRenderer.h"
+#include "txt_renderer.h"
 #include "object.h"
 #include <GLFW/glfw3.h>
 #include <cmath>
 #include <cstdlib>
 #include <glm/common.hpp>
 #include <glm/trigonometric.hpp>
+#include <iostream>
+#include <string>
 #include "math.h"
 
-// TODO: Ball rotation based on x velocity
-// TODO: Change of ball direction based on impact
+// Custom font for the change of level indication
+std::map<char, Character> level_font_characters;
+Shader* level_text_shader;
+
+// time-stamps to know when the level changed
+float level1_timestamp;
+float level2_timestamp;
+float level3_timestamp;
+float level4_timestamp;
+float finallevel_timestamp;
+float gameover_timestamp;
 
 Shader* default_shader;
 glm::mat4 projection;
@@ -28,6 +40,7 @@ unsigned int ball_touches_lvl3;
 
 Object* plat;
 float plat_max_speed;
+unsigned int points;
 
 Game::Game(unsigned int width, unsigned int heigth) {
     this->width = width;
@@ -37,6 +50,8 @@ Game::Game(unsigned int width, unsigned int heigth) {
 
 Game::~Game() {
     delete default_shader;
+    delete ball_shader;
+    delete level_text_shader;
     delete ball;
     delete plat;
 }
@@ -142,6 +157,28 @@ void Game::processInput(GLFWwindow* window, float dt) {
 }
 
 void Game::init() {
+
+    // Text rendering initialization
+    glm::mat4 text_projection = glm::ortho(
+            0.0f, (float)width, 
+            0.0f, (float)heigth, 
+            0.0f, 1.0f);
+    // text shader
+    TextRenderer::default_shader = new Shader("res/shaders/text.vs", "res/shaders/text.fs");
+    TextRenderer::default_shader->use();
+    TextRenderer::default_shader->setMat4("projection", text_projection);
+
+    level_text_shader = new Shader("res/shaders/level_font.vs", "res/shaders/text.fs");
+    level_text_shader->use();
+    level_text_shader->setMat4("projection", text_projection);
+    
+    // creating all the fonts
+    TextRenderer::populate_characters_from_font(
+            "/usr/share/fonts/TTF/DejaVuSans.ttf");
+    TextRenderer::populate_characters_from_font(
+            "/usr/share/fonts/Hack Bold Nerd Font Complete Mono.ttf",
+            level_font_characters);
+
     default_shader = new Shader("res/shaders/default.vs", "res/shaders/default.fs");
     projection = glm::ortho(0.0f, (float)width, (float)heigth, 0.0f, -1.0f, 1.0f);
 
@@ -167,6 +204,7 @@ void Game::init() {
     ball->rotation = 0.f;
     ball->color = glm::vec3(0.2f, 0.8f, 0.2f);
 
+    points = 0;
     plat_max_speed = 250.f;
     plat = new Object;
     plat->vertex_data = SRenderer::generate_vertex_data();
@@ -182,6 +220,9 @@ void Game::init() {
 }
 
 void Game::update(float dt) {
+
+    // I use it ofter, might aswell calculate it just one time
+    float frame_time = (float) glfwGetTime();
 
     // Ball movement
     ball->x += ball->vx * dt;
@@ -210,6 +251,11 @@ void Game::update(float dt) {
     if (ball->x < plat->x+plat->w && // ball is on the same vertical level of the platform
         ball->vx < 0 &&
         !(ball->y > plat->y+plat->h || ball->y+ball->h < plat->y)) { // is NOT outside of the platform
+
+        //increase points
+        points += 1;
+
+        // reset ball position at the platform coordinates
         ball->x = plat->x+plat->w;
 
         // calculate ball angle based on where it hit the platform
@@ -235,6 +281,7 @@ void Game::update(float dt) {
                 break;
             case 4:
                 shake_strength += 0.002;
+                ball->shader->use();
                 ball->shader->setFloat("shake_strength", shake_strength);
                 // I still want to apply effect on the ball
                 ball->vy = sin(glm::radians(ball_angle)) * ball_tot_vel * -1; // * -1 because y is inverted
@@ -247,58 +294,160 @@ void Game::update(float dt) {
         }
     }
 
-    // update ball angle based on the accelleration, but stop after a certain angle
-    if (glm::abs(ball_angle) < 50)
-        ball_angle += ball_acc * dt;
+    // update velocities and angle only if its moving
+    if (ball_tot_vel) {
+        // update ball angle based on the accelleration, but stop after a certain angle
+        if (glm::abs(ball_angle) < 50)
+            ball_angle += ball_acc * dt;
 
-    // update ball velocity base on the angle
-    ball->vx = cos(glm::radians(ball_angle)) * ball_tot_vel * glm::sign(ball->vx);
-    ball->vy = sin(glm::radians(ball_angle)) * ball_tot_vel * -1; // * -1 because y is inverted
+        // update ball velocity base on the angle
+        ball->vx = cos(glm::radians(ball_angle)) * ball_tot_vel * glm::sign(ball->vx);
+        ball->vy = sin(glm::radians(ball_angle)) * ball_tot_vel * -1; // * -1 because y is inverted
+    }
 
     // change level when needed
     if (LEVEL == 1 && ball_tot_vel >= 800) { // 1000
         LEVEL = 2;
+        level2_timestamp = frame_time;
         ball->color = glm::vec3(0.8f, 0.8f, 0.2f);
         std::cout << "LEVEL 2!" << std::endl;
     } else if (LEVEL == 2 && plat->h <= 130) { // 120
         LEVEL = 3;
+        level3_timestamp = frame_time;
         ball->color = glm::vec3(0.8f, 0.2f, 0.2f);
         std::cout << "LEVEL 3!" << std::endl;
     } else if (LEVEL == 3 && ball_touches_lvl3 > 5) { // 3
         LEVEL = 4;
+        level4_timestamp = frame_time;
         ball->color = glm::vec3(0.1f, 0.0f, 0.0f);
+        ball->shader->use();
         ball->shader->setBool("shake", true);
         ball->shader->setFloat("shake_strength", shake_strength);
         std::cout << "LEVEL 4!" << std::endl;
     } else if (LEVEL == 4 && shake_strength > 0.020) {
         LEVEL = 5;
+        finallevel_timestamp = frame_time;
         std::cout << "FINAL LEVEL!" << std::endl;
     }
 
-    if (LEVEL >= 4)
-        ball->shader->setFloat("time", glfwGetTime());
+    if (LEVEL >= 4) {
+        ball->shader->use();
+        ball->shader->setFloat("time", frame_time);
+    }
+
+    level_text_shader->use();
+    level_text_shader->setFloat("time", frame_time);
 
     // Game over condition
     if (ball->x <= 0 && ball->vx != 0.f) { // left bound and game is not over
         std::cout << "\nGame Over!" << std::endl;
+        gameover_timestamp = frame_time;
         ball->x = 0.f;
         ball->vx = 0.f;
         ball->vy = 0.f;
         ball_tot_vel = 0.f;
+        ball->shader->use();
         ball->shader->setBool("shake", false);
         ball->color = glm::vec3(0.8f, 0.8f, 0.8f);
     }
 }
 
 void Game::render(float dt) {
+
+    float frame_time = (float) glfwGetTime();
+
     SRenderer::draw_object(plat, projection);
     SRenderer::draw_object(ball, projection);
+
+    // Movement info
+    TextRenderer::render_text(
+            "Angle: "+std::to_string(ball_angle),
+            10.0f,
+            10.0f,
+            0.4f,
+            glm::vec3(0.1f, 0.1f, 0.1f));
+    TextRenderer::render_text(
+            "Velocity: "+std::to_string(ball_tot_vel),
+            10.0f,
+            30.0f,
+            0.4f,
+            glm::vec3(0.1f, 0.1f, 0.1f));
+
+    // Points
+    TextRenderer::render_text(
+            "Points: "+std::to_string(points),
+            330.0f,
+            (float)heigth - 40.0f,
+            0.65f,
+            glm::vec3(0.1f, 0.1f, 0.1f));
+
+    // Level advancement render
+    if (level1_timestamp && (frame_time - level1_timestamp) < 2)
+        TextRenderer::render_text(
+                "LEVEL 1!",
+                300.0f,
+                (float)heigth / 2.f,
+                1.0f,
+                glm::vec3(0.1f, 0.1f, 0.1f),
+                level_font_characters,
+                level_text_shader);
+    if (level2_timestamp && (frame_time - level2_timestamp) < 2)
+        TextRenderer::render_text(
+                "LEVEL 2!",
+                300.0f,
+                (float)heigth / 2.f,
+                1.0f,
+                glm::vec3(0.1f, 0.1f, 0.1f),
+                level_font_characters,
+                level_text_shader);
+    if (level3_timestamp && (frame_time - level3_timestamp) < 2)
+        TextRenderer::render_text(
+                "LEVEL 3!",
+                300.0f,
+                (float)heigth / 2.f,
+                1.0f,
+                glm::vec3(0.1f, 0.1f, 0.1f),
+                level_font_characters,
+                level_text_shader);
+    if (level4_timestamp && (frame_time - level4_timestamp) < 2)
+        TextRenderer::render_text(
+                "LEVEL 4!",
+                300.0f,
+                (float)heigth / 2.f,
+                1.0f,
+                glm::vec3(0.1f, 0.1f, 0.1f),
+                level_font_characters,
+                level_text_shader);
+    if (finallevel_timestamp && (frame_time - finallevel_timestamp) < 2)
+        TextRenderer::render_text(
+                "FINAL LEVEL!",
+                300.0f,
+                (float)heigth / 2.f,
+                1.0f,
+                glm::vec3(0.1f, 0.1f, 0.1f),
+                level_font_characters,
+                level_text_shader);
+    if (gameover_timestamp && (frame_time - gameover_timestamp) < 3) { // FIXME: La shader non viene applicata
+        TextRenderer::render_text(
+                "GAME OVER",
+                300.0f,
+                (float)heigth / 2.f,
+                1.0f,
+                glm::vec3(0.1f, 0.1f, 0.1f),
+                level_font_characters,
+                level_text_shader);
+        TextRenderer::render_text(
+                "You scored "+std::to_string(points)+" points!",
+                290.0f,
+                (float)heigth / 2.f - 30.0f,
+                0.5f,
+                glm::vec3(0.1f, 0.1f, 0.1f),
+                level_font_characters);
+    }
 }
 
 void Game::reset() {
     std::cout << "\n------------------------------\n-------- Game started! -------\n------------------------------\n" << std::endl;
-    LEVEL = 1;
-    std::cout << "LEVEL 1!" << std::endl;
     ball_tot_vel = 500.f;
     ball_angle = rand() % 120 - 60;
     ball_acc = 0.f;
@@ -308,11 +457,18 @@ void Game::reset() {
     ball->vy = sin(glm::radians(ball_angle)) * ball_tot_vel * -1;
     ball->color = glm::vec3(0.2f, 0.8f, 0.2f);
 
+    shake_strength = 0.005;
     ball_touches_lvl3 = 0;
     
+    points = 0;
     plat_max_speed = 250.f;
     plat->y -= (200.f - plat->h) / 2.f;
     if (plat->y + 200 > heigth)
         plat->y = heigth - 200;
     plat->h = 200.f;
+
+    LEVEL = 1;
+    std::cout << "LEVEL 1!" << std::endl;
+    level1_timestamp = glfwGetTime();
+    gameover_timestamp = 0; // because I don't use the difference, for now
 }
