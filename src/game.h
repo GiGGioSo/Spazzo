@@ -8,7 +8,7 @@
 class Game {
 public:
     unsigned int width, heigth;
-    unsigned int LEVEL;
+    unsigned int level;
 
 public:
     Game(unsigned int width, unsigned int heigth);

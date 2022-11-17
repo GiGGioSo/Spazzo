@@ -17,12 +17,9 @@ std::map<char, Character> level_font_characters;
 Shader* level_text_shader;
 
 // time-stamps to know when the level changed
-float level1_timestamp;
-float level2_timestamp;
-float level3_timestamp;
-float level4_timestamp;
-float finallevel_timestamp;
-float gameover_timestamp;
+float last_timestamp;
+
+bool game_over;
 
 Shader* default_shader;
 glm::mat4 projection;
@@ -45,7 +42,7 @@ unsigned int points;
 Game::Game(unsigned int width, unsigned int heigth) {
     this->width = width;
     this->heigth = heigth;
-    this->LEVEL = 1;
+    this->level = -1;
 }
 
 Game::~Game() {
@@ -158,6 +155,8 @@ void Game::processInput(GLFWwindow* window, float dt) {
 
 void Game::init() {
 
+    game_over = false;
+
     // Text rendering initialization
     glm::mat4 text_projection = glm::ortho(
             0.0f, (float)width, 
@@ -204,8 +203,6 @@ void Game::init() {
     ball->rotation = 0.f;
     ball->color = glm::vec3(0.2f, 0.8f, 0.2f);
 
-    SRenderer::draw_rect(0.0f, const float y, const float width, const float height, const float rotation, unsigned int VAO, Shader *shader, glm::vec3 color, glm::mat4 projection)
-
     points = 0;
     plat_max_speed = 250.f;
     plat = new Object;
@@ -225,6 +222,13 @@ void Game::update(float dt) {
 
     // I use it ofter, might aswell calculate it just one time
     float frame_time = (float) glfwGetTime();
+
+    // update time uniform even if game_over
+    level_text_shader->use();
+    level_text_shader->setFloat("time", frame_time);
+
+    if (game_over) return;
+
 
     // Ball movement
     ball->x += ball->vx * dt;
@@ -266,7 +270,7 @@ void Game::update(float dt) {
         ball->vx *= -1;
 
         // Increase difficolty in different ways, one after another, based on the level
-        switch (LEVEL) {
+        switch (level) {
             case 1:
                 ball_tot_vel += 50.f;
                 plat_max_speed += 15.f;
@@ -308,42 +312,42 @@ void Game::update(float dt) {
     }
 
     // change level when needed
-    if (LEVEL == 1 && ball_tot_vel >= 800) { // 1000
-        LEVEL = 2;
-        level2_timestamp = frame_time;
+    if (level == 1 && ball_tot_vel >= 800) { // 1000
+        level = 2;
+        last_timestamp = frame_time;
         ball->color = glm::vec3(0.8f, 0.8f, 0.2f);
         std::cout << "LEVEL 2!" << std::endl;
-    } else if (LEVEL == 2 && plat->h <= 130) { // 120
-        LEVEL = 3;
-        level3_timestamp = frame_time;
+    } else if (level == 2 && plat->h <= 130) { // 120
+        level = 3;
+        last_timestamp = frame_time;
         ball->color = glm::vec3(0.8f, 0.2f, 0.2f);
         std::cout << "LEVEL 3!" << std::endl;
-    } else if (LEVEL == 3 && ball_touches_lvl3 > 5) { // 3
-        LEVEL = 4;
-        level4_timestamp = frame_time;
+    } else if (level == 3 && ball_touches_lvl3 > 5) { // 3
+        level = 4;
+        last_timestamp = frame_time;
         ball->color = glm::vec3(0.1f, 0.0f, 0.0f);
         ball->shader->use();
         ball->shader->setBool("shake", true);
         ball->shader->setFloat("shake_strength", shake_strength);
         std::cout << "LEVEL 4!" << std::endl;
-    } else if (LEVEL == 4 && shake_strength > 0.020) {
-        LEVEL = 5;
-        finallevel_timestamp = frame_time;
+    } else if (level == 4 && shake_strength > 0.020) {
+        level = 5;
+        last_timestamp = frame_time;
         std::cout << "FINAL LEVEL!" << std::endl;
     }
 
-    if (LEVEL >= 4) {
+    if (level >= 4) {
         ball->shader->use();
         ball->shader->setFloat("time", frame_time);
     }
 
-    level_text_shader->use();
-    level_text_shader->setFloat("time", frame_time);
 
     // Game over condition
     if (ball->x <= 0 && ball->vx != 0.f) { // left bound and game is not over
+        game_over = true;
+        this->level = -1;
         std::cout << "\nGame Over!" << std::endl;
-        gameover_timestamp = frame_time;
+        last_timestamp = frame_time;
         ball->x = 0.f;
         ball->vx = 0.f;
         ball->vy = 0.f;
@@ -384,7 +388,7 @@ void Game::render(float dt) {
             glm::vec3(0.1f, 0.1f, 0.1f));
 
     // Level advancement render
-    if (level1_timestamp && (frame_time - level1_timestamp) < 2)
+    if (this->level == 1 && (frame_time - last_timestamp) < 2)
         TextRenderer::render_text(
                 "LEVEL 1!",
                 300.0f,
@@ -393,7 +397,7 @@ void Game::render(float dt) {
                 glm::vec3(0.1f, 0.1f, 0.1f),
                 level_font_characters,
                 level_text_shader);
-    if (level2_timestamp && (frame_time - level2_timestamp) < 2)
+    if (this->level == 2 && (frame_time - last_timestamp) < 2)
         TextRenderer::render_text(
                 "LEVEL 2!",
                 300.0f,
@@ -402,7 +406,7 @@ void Game::render(float dt) {
                 glm::vec3(0.1f, 0.1f, 0.1f),
                 level_font_characters,
                 level_text_shader);
-    if (level3_timestamp && (frame_time - level3_timestamp) < 2)
+    if (this->level == 3 && (frame_time - last_timestamp) < 2)
         TextRenderer::render_text(
                 "LEVEL 3!",
                 300.0f,
@@ -411,7 +415,7 @@ void Game::render(float dt) {
                 glm::vec3(0.1f, 0.1f, 0.1f),
                 level_font_characters,
                 level_text_shader);
-    if (level4_timestamp && (frame_time - level4_timestamp) < 2)
+    if (this->level == 4 && (frame_time - last_timestamp) < 2)
         TextRenderer::render_text(
                 "LEVEL 4!",
                 300.0f,
@@ -420,7 +424,7 @@ void Game::render(float dt) {
                 glm::vec3(0.1f, 0.1f, 0.1f),
                 level_font_characters,
                 level_text_shader);
-    if (finallevel_timestamp && (frame_time - finallevel_timestamp) < 2)
+    if (this->level == 5 && (frame_time - last_timestamp) < 2)
         TextRenderer::render_text(
                 "FINAL LEVEL!",
                 300.0f,
@@ -429,7 +433,7 @@ void Game::render(float dt) {
                 glm::vec3(0.1f, 0.1f, 0.1f),
                 level_font_characters,
                 level_text_shader);
-    if (gameover_timestamp && (frame_time - gameover_timestamp) < 3) { // FIXME: La shader non viene applicata
+    if (game_over) { // FIXME: La shader non viene applicata
         TextRenderer::render_text(
                 "GAME OVER",
                 300.0f,
@@ -441,7 +445,7 @@ void Game::render(float dt) {
         TextRenderer::render_text(
                 "You scored "+std::to_string(points)+" points!",
                 290.0f,
-                (float)heigth / 2.f - 30.0f,
+                (float)heigth / 2.f - 40.0f,
                 0.5f,
                 glm::vec3(0.1f, 0.1f, 0.1f),
                 level_font_characters);
@@ -450,6 +454,7 @@ void Game::render(float dt) {
 
 void Game::reset() {
     std::cout << "\n------------------------------\n-------- Game started! -------\n------------------------------\n" << std::endl;
+    game_over = false;
     ball_tot_vel = 500.f;
     ball_angle = rand() % 120 - 60;
     ball_acc = 0.f;
@@ -469,8 +474,7 @@ void Game::reset() {
         plat->y = heigth - 200;
     plat->h = 200.f;
 
-    LEVEL = 1;
+    level = 1;
     std::cout << "LEVEL 1!" << std::endl;
-    level1_timestamp = glfwGetTime();
-    gameover_timestamp = 0; // because I don't use the difference, for now
+    last_timestamp = glfwGetTime();
 }
