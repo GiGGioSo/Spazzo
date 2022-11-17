@@ -204,6 +204,8 @@ void Game::init() {
     ball->rotation = 0.f;
     ball->color = glm::vec3(0.2f, 0.8f, 0.2f);
 
+    SRenderer::draw_rect(0.0f, const float y, const float width, const float height, const float rotation, unsigned int VAO, Shader *shader, glm::vec3 color, glm::mat4 projection)
+
     points = 0;
     plat_max_speed = 250.f;
     plat = new Object;

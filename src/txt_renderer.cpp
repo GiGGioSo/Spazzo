@@ -99,9 +99,6 @@ int TextRenderer::populate_characters_from_font(
         unsigned int VAO,
         unsigned int VBO) {
 
-
-    /* std::cout << text << ": " << s->ID << std::endl; */
-
     s->use();
     s->setVec3("textColor", color);
     glActiveTexture(GL_TEXTURE0);
