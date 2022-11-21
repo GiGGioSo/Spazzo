@@ -22,7 +22,6 @@
 #include "game.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window);
 
 float this_frame = 0.f;
 float last_frame = 0.f;
@@ -51,6 +50,10 @@ int main() {
         return -1;
     }
     glfwMakeContextCurrent(window);
+
+    // disable vsync
+    glfwSwapInterval(0);
+
     // initialize glad
     if(!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         std::cout << "Failed to inizialize GLAD" << std::endl;

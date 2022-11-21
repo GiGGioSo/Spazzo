@@ -19,6 +19,13 @@ Shader* level_text_shader;
 // time-stamps to know when the level changed
 float last_timestamp;
 
+bool debug;
+
+//fps counter
+int fps_counter;
+int fps_shown;
+float second_tot_time;
+
 bool game_over;
 
 Shader* default_shader;
@@ -143,6 +150,10 @@ void Game::processInput(GLFWwindow* window, float dt) {
         plat->vy = plat_max_speed;
     }
 
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+        debug = !debug;
+    }
+
     // Reset game
     if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS ||
         (c1_present &&
@@ -175,7 +186,8 @@ void Game::init() {
     TextRenderer::populate_characters_from_font(
             "/usr/share/fonts/TTF/DejaVuSans.ttf");
     TextRenderer::populate_characters_from_font(
-            "/usr/share/fonts/Hack Bold Nerd Font Complete Mono.ttf",
+            "/usr/share/fonts/TTF/DejaVuSans.ttf",
+            //"/usr/share/fonts/Hack Bold Nerd Font Complete Mono.ttf",
             level_font_characters);
 
     default_shader = new Shader("res/shaders/default.vs", "res/shaders/default.fs");
@@ -220,6 +232,15 @@ void Game::init() {
 
 void Game::update(float dt) {
 
+    second_tot_time += dt;
+    fps_counter++;
+
+    if (second_tot_time > 1) {
+        second_tot_time -= 1;
+        fps_shown = fps_counter;
+        fps_counter = 0;
+    }
+
     // I use it ofter, might aswell calculate it just one time
     float frame_time = (float) glfwGetTime();
 
@@ -240,12 +261,10 @@ void Game::update(float dt) {
     if (ball->y < 0) { // upper bound
         ball->y = 0.f;
         ball_angle *= -1; // don't directly touch vy of the ball, just change the angle
-        /* ball_acc = 0.f; */
     }
     if (ball->y + ball->h > heigth) { // downer bound
         ball->y = heigth - ball->h;
         ball_angle *= -1;
-        /* ball_acc = 0.f; */
     }
 
     // Platform movement
@@ -365,19 +384,6 @@ void Game::render(float dt) {
     SRenderer::draw_object(plat, projection);
     SRenderer::draw_object(ball, projection);
 
-    // Movement info
-    TextRenderer::render_text(
-            "Angle: "+std::to_string(ball_angle),
-            10.0f,
-            10.0f,
-            0.4f,
-            glm::vec3(0.1f, 0.1f, 0.1f));
-    TextRenderer::render_text(
-            "Velocity: "+std::to_string(ball_tot_vel),
-            10.0f,
-            30.0f,
-            0.4f,
-            glm::vec3(0.1f, 0.1f, 0.1f));
 
     // Points
     TextRenderer::render_text(
@@ -449,6 +455,30 @@ void Game::render(float dt) {
                 0.5f,
                 glm::vec3(0.1f, 0.1f, 0.1f),
                 level_font_characters);
+    }
+    
+    if (debug) {
+        // Movement info
+        TextRenderer::render_text(
+                "Angle: "+std::to_string(ball_angle),
+                10.0f,
+                10.0f,
+                0.4f,
+                glm::vec3(0.1f, 0.1f, 0.1f));
+        TextRenderer::render_text(
+                "Velocity: "+std::to_string(ball_tot_vel),
+                10.0f,
+                30.0f,
+                0.4f,
+                glm::vec3(0.1f, 0.1f, 0.1f));
+
+        // FPS counter
+        TextRenderer::render_text(
+                "FPS: "+std::to_string(fps_shown),
+                (float) width/2 - 20,
+                10.0f,
+                0.4f,
+                glm::vec3(0.1f, 0.1f, 0.1f));
     }
 }
 

@@ -3,7 +3,6 @@
 layout (location = 0) in vec2 vertex;
 
 uniform mat4 model;
-/* uniform mat4 projection;   NON FUNZIONAAAAA  */
 
 uniform float time;
 uniform bool shake;
