@@ -1,10 +1,7 @@
 #include "../include/glad/glad.h"
-#include <GLFW/glfw3.h>
+/* #include <GLFW/glfw3.h> */
+#include "../include/glfw3.h"
 
-/* #include <glm/gtx/string_cast.hpp> */
-#include <bits/types/cookie_io_functions_t.h>
-#include <functional>
-#include <glm/detail/qualifier.hpp>
 #include <iostream>
 #include <map>
 #include <math.h>

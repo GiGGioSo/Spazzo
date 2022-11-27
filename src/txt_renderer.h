@@ -2,12 +2,10 @@
 #define TXT_RENDERER_H
 
 #include "shader.h"
-#include <ft2build.h> 
-#include FT_FREETYPE_H
 // https://stackoverflow.com/questions/34910660/fatal-error-freetype-config-ftheader-h
 // https://stackoverflow.com/questions/12312034/freetype-library-and-undefined-reference-to-ft-init-freetype
 
-#include <glm/glm.hpp>
+#include "../include/glm/glm.hpp"
 #include <iostream>
 #include <map>
 

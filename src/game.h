@@ -1,9 +1,9 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "glm/glm.hpp"
+#include "../include/glm/glm.hpp"
 #define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+#include "../include/GLFW/glfw3.h"
 
 class Game {
 public:

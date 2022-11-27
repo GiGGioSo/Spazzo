@@ -6,8 +6,8 @@
 #include <GLFW/glfw3.h>
 #include <cmath>
 #include <cstdlib>
-#include <glm/common.hpp>
-#include <glm/trigonometric.hpp>
+#include "../include/glm/common.hpp"
+#include "../include/glm/ext.hpp"
 #include <iostream>
 #include <string>
 #include "math.h"
@@ -20,6 +20,7 @@ Shader* level_text_shader;
 float last_timestamp;
 
 bool debug;
+bool was_p_pressed;
 
 //fps counter
 int fps_counter;
@@ -151,7 +152,12 @@ void Game::processInput(GLFWwindow* window, float dt) {
     }
 
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-        debug = !debug;
+        if (!was_p_pressed)
+            debug = !debug;
+
+        was_p_pressed = true;
+    } else {
+        was_p_pressed = false;
     }
 
     // Reset game
@@ -186,7 +192,7 @@ void Game::init() {
     TextRenderer::populate_characters_from_font(
             "/usr/share/fonts/TTF/DejaVuSans.ttf");
     TextRenderer::populate_characters_from_font(
-            "/usr/share/fonts/TTF/DejaVuSans.ttf",
+            "/usr/share/fonts/Hack Bold Nerd Font Complete.ttf",
             //"/usr/share/fonts/Hack Bold Nerd Font Complete Mono.ttf",
             level_font_characters);
 

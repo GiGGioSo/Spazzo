@@ -1,5 +1,5 @@
 #include "SRenderer.h"
-#include "glm/gtx/string_cast.hpp"
+#include "../include/glm/gtx/string_cast.hpp"
 
 unsigned int SRenderer::generate_vertex_data() {
 

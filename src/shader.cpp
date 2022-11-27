@@ -1,11 +1,11 @@
 #include "shader.h"
 
 #include <fstream>
-#include <glm/gtc/type_ptr.hpp>
+#include "../include/glm/gtc/type_ptr.hpp"
 #include <sstream>
 #include <iostream>
 
-#include <glm/glm.hpp>
+#include "../include/glm/glm.hpp"
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath) {
 

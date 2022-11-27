@@ -1,7 +1,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
-#include "glm/glm.hpp"
+#include "../include/glm/glm.hpp"
 #include "shader.h"
 
 struct Object {
