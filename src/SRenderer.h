@@ -4,10 +4,8 @@
 #include <iostream>
 
 #include "../include/glm/glm.hpp"
-/* #include <glm/gtc/matrix_transform.hpp> */
 
 #include "shader.h"
-#include "object.h"
 
 class SRenderer {
 
@@ -21,10 +19,6 @@ public:
             unsigned int VAO,
             Shader* shader,
             glm::vec3 color,
-            glm::mat4 projection);
-
-    static void draw_object(
-            Object* obj,
             glm::mat4 projection);
 };
 

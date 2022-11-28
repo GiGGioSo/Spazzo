@@ -64,28 +64,3 @@ void SRenderer::draw_rect(
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 }
-
-void SRenderer::draw_object(Object *obj, glm::mat4 projection) {
-    obj->shader->use();
-    glm::mat4 model = glm::mat4(1.f);
-    /* std::cout << "STEP 1:\n" << glm::to_string(model) << std::endl; */
-
-    model = glm::translate(model, glm::vec3(obj->x, obj->y, 0.f));
-
-    // translate before rotation to make it rotate from the center
-    model = glm::translate(model, glm::vec3(0.5f * obj->w, 0.5f * obj->h, 0.f));
-    model = glm::rotate(model, glm::radians(obj->rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::translate(model, glm::vec3(-0.5f * obj->w, -0.5f * obj->h, 0.f));
-
-    model = glm::scale(model, glm::vec3(obj->w, obj->h, 1.0f));
-
-    // I HAVE TO DO THIS HERE BECAUSE DOESN'T WORK INSIDE THE SHADERS
-    model = projection * model;
-
-    obj->shader->setMat4("model", model);
-    obj->shader->setVec3("spriteColor", obj->color);
-
-    glBindVertexArray(obj->vertex_data);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
-}
