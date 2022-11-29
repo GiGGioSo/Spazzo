@@ -1,9 +1,9 @@
 #include "game.h"
 #include "shader.h"
-#include "SRenderer.h"
+#include "renderer.h"
 #include "txt_renderer.h"
 #include "spazzo_structs.h"
-#include <GLFW/glfw3.h>
+#include "../include/glfw3.h"
 #include <cmath>
 #include <cstdlib>
 #include "../include/glm/common.hpp"
@@ -16,22 +16,81 @@
 std::map<char, Character> level_font_characters;
 Shader* level_text_shader;
 
-Ball* ball;
-
-GameState* game_state;
-
-Platform* plat;
-
 Game::Game(unsigned int width, unsigned int heigth) {
     this->width = width;
     this->heigth = heigth;
     this->level = -1;
+
+    // Text rendering initialization
+    glm::mat4 text_projection = glm::ortho(
+            0.0f, (float)width, 
+            0.0f, (float)heigth, 
+            0.0f, 1.0f);
+    // text shader
+    TextRenderer::default_shader = new Shader("res/shaders/text.vs", "res/shaders/text.fs");
+    TextRenderer::default_shader->use();
+    TextRenderer::default_shader->setMat4("projection", text_projection);
+
+    level_text_shader = new Shader("res/shaders/level_font.vs", "res/shaders/text.fs");
+    level_text_shader->use();
+    level_text_shader->setMat4("projection", text_projection);
+    
+    // creating all the fonts
+    TextRenderer::populate_characters_from_font(
+            "/usr/share/fonts/TTF/DejaVuSans.ttf");
+    TextRenderer::populate_characters_from_font(
+            "/usr/share/fonts/Hack Bold Nerd Font Complete.ttf",
+            //"/usr/share/fonts/Hack Bold Nerd Font Complete Mono.ttf",
+            level_font_characters);
+
+
+    srand((unsigned)time(0));
+
+
+    game_state = new GameState;
+    game_state->game_over = false;
+    game_state->points = 0;
+    game_state->lvl3_ball_touches = 0;
+    game_state->print_debug_info = true;
+    game_state->projection = glm::ortho(0.0f, (float)width, (float)heigth, 0.0f, -1.0f, 1.0f);
+    game_state->was_debug_info_displayed = false;
+    game_state->fps_counter = 0;
+    game_state->fps_displayed = 0;
+    game_state->fps_time_from_last_update = 0.0f;
+
+    ball = new Ball;
+    ball->shake_strength = 0.005; // default shake strength, used in the shader
+    ball->total_vel = 0.f;
+    ball->angle_acc = 0.f;
+    ball->rotation = 20.f;
+    ball->vertex_data = Renderer::generate_vertex_data();
+    ball->shader = new Shader("res/shaders/ball.vs", "res/shaders/default.fs");
+    ball->x = 0.f;
+    ball->y = 50.f;
+    ball->w= 30.f;
+    ball->h= 30.f;
+    ball->vx = cos(glm::radians(ball->rotation)) * ball->total_vel;
+    ball->vy = sin(glm::radians(ball->rotation)) * ball->total_vel;
+    ball->color = glm::vec3(0.2f, 0.8f, 0.2f);
+
+    plat = new Platform;
+    plat->max_vel = 250.f;
+    plat->vertex_data = Renderer::generate_vertex_data();
+    plat->shader = new Shader("res/shaders/default.vs", "res/shaders/default.fs");
+    plat->w= 20.f;
+    plat->h= 200.f;
+    plat->y = heigth / 2.f - plat->h / 2.f;
+    plat->x = 0.0f;
+    plat->vx = 0.f;
+    plat->vy = 0.f;
+    plat->color = glm::vec3(0.9f, 0.5f, 0.3f);
 }
 
 Game::~Game() {
     delete level_text_shader;
     delete ball;
     delete plat;
+    delete game_state;
 }
 
 void Game::processInput(GLFWwindow* window, float dt) {
@@ -113,15 +172,15 @@ void Game::processInput(GLFWwindow* window, float dt) {
     // Platform movement
     plat->vy = 0;
     if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS ||
-        (c1_present && 
-            (lj_v <= -0.7f ||
-             dpad_up))) {
+            (c1_present && (lj_v <= -0.7f || dpad_up))) {
+
         plat->vy = -plat->max_vel;
+
     } else if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS ||
-        (c1_present && 
-            (lj_v >= 0.7f ||
-             dpad_down))) {
+            (c1_present && (lj_v >= 0.7f || dpad_down))) {
+
         plat->vy = plat->max_vel;
+
     }
 
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
@@ -135,80 +194,11 @@ void Game::processInput(GLFWwindow* window, float dt) {
 
     // Reset game
     if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS ||
-        (c1_present &&
-            b_up)) {
+        (c1_present && b_up)) {
         if (ball->vx == 0.f && ball->vy == 0.f && ball->x == 0.f) {
             this->reset();
         }
     }
-}
-
-void Game::init() {
-
-
-    // Text rendering initialization
-    glm::mat4 text_projection = glm::ortho(
-            0.0f, (float)width, 
-            0.0f, (float)heigth, 
-            0.0f, 1.0f);
-    // text shader
-    TextRenderer::default_shader = new Shader("res/shaders/text.vs", "res/shaders/text.fs");
-    TextRenderer::default_shader->use();
-    TextRenderer::default_shader->setMat4("projection", text_projection);
-
-    level_text_shader = new Shader("res/shaders/level_font.vs", "res/shaders/text.fs");
-    level_text_shader->use();
-    level_text_shader->setMat4("projection", text_projection);
-    
-    // creating all the fonts
-    TextRenderer::populate_characters_from_font(
-            "/usr/share/fonts/TTF/DejaVuSans.ttf");
-    TextRenderer::populate_characters_from_font(
-            "/usr/share/fonts/Hack Bold Nerd Font Complete.ttf",
-            //"/usr/share/fonts/Hack Bold Nerd Font Complete Mono.ttf",
-            level_font_characters);
-
-
-    srand((unsigned)time(0));
-
-
-    game_state = new GameState;
-    game_state->game_over = false;
-    game_state->points = 0;
-    game_state->lvl3_ball_touches = 0;
-    game_state->print_debug_info = false;
-    game_state->projection = glm::ortho(0.0f, (float)width, (float)heigth, 0.0f, -1.0f, 1.0f);
-    game_state->was_debug_info_displayed = false;
-    game_state->fps_counter = 0;
-    game_state->fps_displayed = 0;
-    game_state->fps_time_from_last_update = 0.0f;
-
-    ball = new Ball;
-    ball->shake_strength = 0.005; // default shake strength, used in the shader
-    ball->total_vel = 0.f;
-    ball->angle_acc = 0.f;
-    ball->rotation = 20.f;
-    ball->vertex_data = SRenderer::generate_vertex_data();
-    ball->shader = new Shader("res/shaders/ball.vs", "res/shaders/default.fs");
-    ball->x = 0.f;
-    ball->y = 50.f;
-    ball->w= 30.f;
-    ball->h= 30.f;
-    ball->vx = cos(glm::radians(ball->rotation)) * ball->total_vel;
-    ball->vy = sin(glm::radians(ball->rotation)) * ball->total_vel;
-    ball->color = glm::vec3(0.2f, 0.8f, 0.2f);
-
-    plat = new Platform;
-    plat->max_vel = 250.f;
-    plat->vertex_data = SRenderer::generate_vertex_data();
-    plat->shader = new Shader("res/shaders/default.vs", "res/shaders/default.fs");
-    plat->w= 20.f;
-    plat->h= 200.f;
-    plat->y = heigth / 2.f - plat->h / 2.f;
-    plat->x = 0.0f;
-    plat->vx = 0.f;
-    plat->vy = 0.f;
-    plat->color = glm::vec3(0.9f, 0.5f, 0.3f);
 }
 
 void Game::update(float dt) {
@@ -362,8 +352,8 @@ void Game::render(float dt) {
 
     float frame_time = (float) glfwGetTime();
 
-    SRenderer::draw_rect(plat->x, plat->y, plat->w, plat->h, 0.0f, plat->vertex_data, plat->shader, plat->color, game_state->projection);
-    SRenderer::draw_rect(ball->x, ball->y, ball->w, ball->h, -glm::sign(ball->vx)*ball->rotation, ball->vertex_data, ball->shader, ball->color, game_state->projection);
+    Renderer::draw_rect(plat->x, plat->y, plat->w, plat->h, 0.0f, plat->vertex_data, plat->shader, plat->color, game_state->projection);
+    Renderer::draw_rect(ball->x, ball->y, ball->w, ball->h, -glm::sign(ball->vx)*ball->rotation, ball->vertex_data, ball->shader, ball->color, game_state->projection);
 
 
     // Points

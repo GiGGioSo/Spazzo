@@ -1,7 +1,7 @@
-#include "SRenderer.h"
+#include "renderer.h"
 #include "../include/glm/gtx/string_cast.hpp"
 
-unsigned int SRenderer::generate_vertex_data() {
+unsigned int Renderer::generate_vertex_data() {
 
     float vertices[] = {
         0.f, 1.f,       // top left
@@ -33,7 +33,7 @@ unsigned int SRenderer::generate_vertex_data() {
     return VAO;
 }
 
-void SRenderer::draw_rect(
+void Renderer::draw_rect(
         const float x, const float y, const float width, const float heigth,
         const float rotation,
         unsigned int VAO, 

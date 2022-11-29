@@ -15,7 +15,7 @@
 #include "../include/stb_image.h"
 
 #include "shader.h"
-#include "SRenderer.h"
+#include "renderer.h"
 #include "game.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -28,7 +28,7 @@ const int WIDTH = 800;
 const int HEIGTH = 600;
 const char* TITLE = "spazzo";
 
-Game game(WIDTH, HEIGTH);
+Game* game;
 
 int main() {
 
@@ -65,7 +65,7 @@ int main() {
 
 
     // Start of the actual game
-    game.init();
+    game = new Game(WIDTH, HEIGTH);
 
     while (!glfwWindowShouldClose(window)) {
 
@@ -75,16 +75,16 @@ int main() {
         last_frame = this_frame;
 
         // input
-        game.processInput(window, delta_time);
+        game->processInput(window, delta_time);
 
         // update
-        game.update(delta_time);
+        game->update(delta_time);
 
         //draw
         glClearColor(0.2f, 0.3f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        game.render(delta_time);
+        game->render(delta_time);
 
 
         glfwSwapBuffers(window);

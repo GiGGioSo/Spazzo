@@ -7,7 +7,7 @@
 
 #include "shader.h"
 
-class SRenderer {
+class Renderer {
 
 public:
     // Disegno un rettangolo
