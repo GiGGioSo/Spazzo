@@ -18,6 +18,8 @@
 #include "renderer.h"
 #include "game.h"
 
+#include "globals.h"
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 float this_frame = 0.f;
@@ -25,10 +27,8 @@ float last_frame = 0.f;
 float delta_time = 0.f;
 
 const int WIDTH = 800;
-const int HEIGTH = 600;
+const int HEIGHT = 600;
 const char* TITLE = "spazzo";
-
-Game* game;
 
 int main() {
 
@@ -40,7 +40,7 @@ int main() {
 
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGTH, TITLE, NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, TITLE, NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -61,11 +61,9 @@ int main() {
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    glViewport(0, 0, WIDTH, HEIGTH);
+    glViewport(0, 0, WIDTH, HEIGHT);
 
-
-    // Start of the actual game
-    game = new Game(WIDTH, HEIGTH);
+    game_init();
 
     while (!glfwWindowShouldClose(window)) {
 
@@ -75,21 +73,23 @@ int main() {
         last_frame = this_frame;
 
         // input
-        game->processInput(window, delta_time);
+        game_processInput(window, delta_time);
 
         // update
-        game->update(delta_time);
+        game_update(delta_time);
 
         //draw
         glClearColor(0.2f, 0.3f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        game->render(delta_time);
+        game_render(delta_time);
 
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    game_free();
 
     glfwTerminate();
     return 0;

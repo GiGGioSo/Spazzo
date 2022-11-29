@@ -26,6 +26,7 @@ struct Platform {
 };
 
 struct GameState {
+    unsigned int level;
     unsigned int points;
     bool game_over;
     unsigned int lvl3_ball_touches;

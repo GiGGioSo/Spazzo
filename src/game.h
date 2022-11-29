@@ -6,27 +6,17 @@
 #define GLFW_INCLUDE_NONE
 #include "../include/GLFW/glfw3.h"
 
-class Game {
-public:
-    unsigned int width, heigth;
-    unsigned int level;
-    Ball* ball;
-    Platform* plat;
-    GameState* game_state;
+void game_init();
 
-public:
-    Game(unsigned int width, unsigned int heigth);
+void game_free();
 
-    ~Game();
+void game_reset();
 
-    void reset();
+void game_processInput(GLFWwindow* window, float dt);
 
-    void processInput(GLFWwindow* window, float dt);
+void game_update(float dt);
 
-    void update(float dt);
+void game_render(float dt);
 
-    void render(float dt);
-
-};
 
 #endif
