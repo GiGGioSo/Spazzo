@@ -29,6 +29,7 @@ float delta_time = 0.f;
 const int WIDTH = 800;
 const int HEIGHT = 600;
 const char* TITLE = "spazzo";
+InputController* input = new InputController();
 
 int main() {
 
@@ -73,7 +74,7 @@ int main() {
         last_frame = this_frame;
 
         // input
-        game_processInput(window, delta_time);
+        update_InputController(window);
 
         // update
         game_update(delta_time);
@@ -90,6 +91,7 @@ int main() {
     }
 
     game_free();
+    globals_free();
 
     glfwTerminate();
     return 0;

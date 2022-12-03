@@ -51,9 +51,9 @@ void game_init() {
     srand((unsigned)time(0));
 
 
-    game_state = new GameState;
+    game_state = new GameState();
     game_state->level = -1;
-    game_state->game_over = false;
+    game_state->game_over = true;
     game_state->points = 0;
     game_state->lvl3_ball_touches = 0;
     game_state->print_debug_info = true;
@@ -63,7 +63,7 @@ void game_init() {
     game_state->fps_displayed = 0;
     game_state->fps_time_from_last_update = 0.0f;
 
-    ball = new Ball;
+    ball = new Ball();
     ball->shake_strength = 0.005; // default shake strength, used in the shader
     ball->total_vel = 0.f;
     ball->angle_acc = 0.f;
@@ -78,7 +78,7 @@ void game_init() {
     ball->vy = sin(glm::radians(ball->rotation)) * ball->total_vel;
     ball->color = glm::vec3(0.2f, 0.8f, 0.2f);
 
-    plat = new Platform;
+    plat = new Platform();
     plat->max_vel = 250.f;
     plat->vertex_data = Renderer::generate_vertex_data();
     plat->shader = new Shader("res/shaders/default.vs", "res/shaders/default.fs");
@@ -98,119 +98,11 @@ void game_free() {
     delete game_state;
 }
 
-void game_processInput(GLFWwindow* window, float dt) {
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, true);
-    }
-
-    // Fetching controller input
-    // ANALOGICO
-    float lj_h; // left-joysticj horizontal  -1=left   1=right
-    float lj_v; // left-joystick vertical    -1=up     1=down
-    float rj_h; // right-joysticj horizontal  -1=left   1=right
-    float rj_v; // right-joystick vertical    -1=up     1=down
-    float lt_an; // analogical left-trigger   -1=released     1=pressed
-    float rt_an; // analogical right-trigger   -1=released     1=pressed
-
-    //DIGITALE
-    bool dpad_up; // DPAD controls
-    bool dpad_right;
-    bool dpad_down;
-    bool dpad_left;
-
-    bool b_up; // Button controls (I put the direction instead of the name)
-    bool b_right;
-    bool b_down;
-    bool b_left;
-
-    bool ls; // left shoulder
-    bool rs; // right shoulder
-
-    bool lt_dig; // digital left trigger
-    bool rt_dig; // digital right trigger
-
-    bool lj_click; // right-joystick click
-    bool rj_click; // left-joystick click
-
-    bool b_share; // share button
-    bool b_opt; // option button
-    bool b_logo; // logo button
-
-    int c1_present = glfwJoystickPresent(GLFW_JOYSTICK_1);
-    if (!c1_present); //std::cout << "[ERROR] Controller 1 not present" << std::endl;
-    else {
-        int axes_count;
-        const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axes_count);
-        if (axes_count != 6) std::cout << "[WARNING] Controller with " << axes_count << " axes!!" << std::endl;
-        else {
-            lj_h = axes[0];
-            lj_v = axes[1];
-            lt_an = axes[2];
-            rj_h = axes[3];
-            rj_v = axes[4];
-            rt_an = axes[5];
-        }
-        int buttons_count;
-        const unsigned char* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttons_count);
-        if (buttons_count != 17) std::cout << "[WARNING] Controller with " << buttons_count << " buttons!!" << std::endl;
-        else {
-            b_down = buttons[0] == GLFW_PRESS;
-            b_right = buttons[1] == GLFW_PRESS;
-            b_up = buttons[2] == GLFW_PRESS;
-            b_left = buttons[3] == GLFW_PRESS;
-            ls = buttons[4] == GLFW_PRESS;
-            rs = buttons[5] == GLFW_PRESS;
-            lt_dig = buttons[6] == GLFW_PRESS;
-            rt_dig = buttons[7] == GLFW_PRESS;
-            b_share = buttons[8] == GLFW_PRESS;
-            b_opt = buttons[9] == GLFW_PRESS;
-            b_logo = buttons[10] == GLFW_PRESS;
-            lj_click = buttons[11] == GLFW_PRESS;
-            rj_click = buttons[12] == GLFW_PRESS;
-            dpad_up = buttons[13] == GLFW_PRESS;
-            dpad_right = buttons[14] == GLFW_PRESS;
-            dpad_down = buttons[15] == GLFW_PRESS;
-            dpad_left = buttons[16] == GLFW_PRESS;
-        }
-    }
-
-    // Platform movement
-    plat->vy = 0;
-    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS ||
-            (c1_present && (lj_v <= -0.7f || dpad_up))) {
-
-        plat->vy = -plat->max_vel;
-
-    } else if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS ||
-            (c1_present && (lj_v >= 0.7f || dpad_down))) {
-
-        plat->vy = plat->max_vel;
-
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-        if (!game_state->was_debug_info_displayed)
-            game_state->print_debug_info = !game_state->print_debug_info;
-
-        game_state->was_debug_info_displayed = true;
-    } else {
-        game_state->was_debug_info_displayed = false;
-    }
-
-    // Reset game
-    if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS ||
-        (c1_present && b_up)) {
-        if (ball->vx == 0.f && ball->vy == 0.f && ball->x == 0.f) {
-            game_reset();
-        }
-    }
-}
-
 void game_update(float dt) {
 
+    // FPS counter stuff
     game_state->fps_time_from_last_update += dt;
     game_state->fps_counter++;
-
     if (game_state->fps_time_from_last_update > 1) {
         game_state->fps_time_from_last_update -= 1;
         game_state->fps_displayed = game_state->fps_counter;
@@ -224,8 +116,37 @@ void game_update(float dt) {
     level_text_shader->use();
     level_text_shader->setFloat("time", frame_time);
 
+    // Reset game
+
+    if(input->reset && game_state->game_over) {
+        std::cout << game_state->game_over << std::endl;
+        game_reset();
+    }
+
     if (game_state->game_over) return;
 
+    // update stuff based on input
+    // Platform movement
+    plat->vy = 0;
+    if(input->move_up) {
+
+        plat->vy = -plat->max_vel;
+
+    } else if(input->move_down) {
+
+        plat->vy = plat->max_vel;
+
+    }
+    // debug info
+    if (input->toggle_debug) {
+        if (!game_state->was_debug_info_displayed) {
+            game_state->print_debug_info = !game_state->print_debug_info;
+        }
+
+        game_state->was_debug_info_displayed = true;
+    } else {
+        game_state->was_debug_info_displayed = false;
+    }
 
     // Ball movement
     ball->x += ball->vx * dt;
@@ -415,7 +336,7 @@ void game_render(float dt) {
                 glm::vec3(0.1f, 0.1f, 0.1f),
                 level_font_characters,
                 level_text_shader);
-    if (game_state->game_over) { // FIXME: La shader non viene applicata
+    if (game_state->game_over && game_state->level != -1) { // FIXME: La shader non viene applicata
         TextRenderer::render_text(
                 "GAME OVER",
                 300.0f,
