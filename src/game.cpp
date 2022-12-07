@@ -44,7 +44,6 @@ void game_init() {
             "/usr/share/fonts/TTF/DejaVuSans.ttf");
     TextRenderer::populate_characters_from_font(
             "/usr/share/fonts/Hack Bold Nerd Font Complete.ttf",
-            //"/usr/share/fonts/Hack Bold Nerd Font Complete Mono.ttf",
             level_font_characters);
 
 
@@ -281,6 +280,7 @@ void game_render(float dt) {
     Renderer::draw_rect(plat->x, plat->y, plat->w, plat->h, 0.0f, plat->vertex_data, plat->shader, plat->color, game_state->projection);
     Renderer::draw_rect(ball->x, ball->y, ball->w, ball->h, -glm::sign(ball->vx)*ball->rotation, ball->vertex_data, ball->shader, ball->color, game_state->projection);
 
+    /*
 
     // Points
     TextRenderer::render_text(
@@ -377,6 +377,8 @@ void game_render(float dt) {
                 0.4f,
                 glm::vec3(0.1f, 0.1f, 0.1f));
     }
+
+    */
 }
 
 void game_reset() {

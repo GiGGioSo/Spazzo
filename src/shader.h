@@ -1,7 +1,6 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include "../include/glad/glad.h"
 #include <string>
 #include "../include/glm/glm.hpp"
 

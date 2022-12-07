@@ -1,5 +1,6 @@
 #include "renderer.h"
 #include "../include/glm/gtx/string_cast.hpp"
+#include "../include/glad/glad.h"
 
 unsigned int Renderer::generate_vertex_data() {
 
