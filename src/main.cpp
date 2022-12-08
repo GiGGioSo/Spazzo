@@ -18,7 +18,7 @@
 #include "../include/glm/common.hpp"
 #include "../include/glm/ext.hpp"
 
-#include "../include/stb_image.h"
+/* #include "../include/stb_image.h" */
 #include "text_renderer.h"
 #define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
 #include "../include/stb_truetype.h"
@@ -29,6 +29,9 @@
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+static void DebugCallback(
+    GLenum source, GLenum type, GLuint id, GLenum severity,
+    GLsizei length, const GLchar* message, const void* user);
 
 float this_frame = 0.f;
 float last_frame = 0.f;
@@ -48,6 +51,8 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
@@ -69,6 +74,11 @@ int main() {
     }
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // enable debug
+    glDebugMessageCallback(&DebugCallback, NULL);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
@@ -107,9 +117,9 @@ int main() {
 
         game_render(delta_time);
         
-        add_text_render_queue(100.f, 100.f, "IMI", &text_renderer->fonts[0]);
+        add_text_render_queue(110.f, 110.f, "CI", &text_renderer->fonts[0]);
 
-        add_text_render_queue(20.f, 20.f, "CIO", &text_renderer->fonts[0]);
+        /* add_text_render_queue(20.f, 20.f, "CI4", &text_renderer->fonts[0]); */
 
         render_text_queue(&text_renderer->fonts[0], s, glm::vec3(1.0f, 0.0f, 0.0f));
 
@@ -126,4 +136,15 @@ int main() {
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
+}
+
+static void DebugCallback(
+    GLenum source, GLenum type, GLuint id, GLenum severity,
+    GLsizei length, const GLchar* message, const void* user)
+{
+    std::cout << message << std::endl;
+    /* if (severity == GL_DEBUG_SEVERITY_HIGH || severity == GL_DEBUG_SEVERITY_MEDIUM) */
+    /* { */
+    /*     std::cout << "OpenGL API usage error! Use debugger to examine call stack!" << std::endl; */
+    /* } */
 }

@@ -1,7 +1,7 @@
 #include "game.h"
 #include "shader.h"
 #include "renderer.h"
-#include "txt_renderer.h"
+#include "text_renderer.h"
 #include "spazzo_structs.h"
 #include "../include/glfw3.h"
 #include <cmath>
@@ -15,8 +15,8 @@
 #include "globals.h"
 
 // Custom font for the change of level indication
-std::map<char, Character> level_font_characters;
 Shader* level_text_shader;
+Shader* default_text_shader;
 
 Ball* ball;
 Platform* plat;
@@ -31,24 +31,15 @@ void game_init() {
             0.0f, (float)HEIGHT, 
             0.0f, 1.0f);
     // text shader
-    TextRenderer::default_shader = new Shader("res/shaders/text.vs", "res/shaders/text.fs");
-    TextRenderer::default_shader->use();
-    TextRenderer::default_shader->setMat4("projection", text_projection);
+    default_text_shader = new Shader("res/shaders/default_text.vs", "res/shaders/default_text.fs");
+    default_text_shader->use();
+    default_text_shader->setMat4("projection", text_projection);
 
-    level_text_shader = new Shader("res/shaders/level_font.vs", "res/shaders/text.fs");
+    level_text_shader = new Shader("res/shaders/level_font.vs", "res/shaders/default_text.fs");
     level_text_shader->use();
     level_text_shader->setMat4("projection", text_projection);
-    
-    // creating all the fonts
-    TextRenderer::populate_characters_from_font(
-            "/usr/share/fonts/TTF/DejaVuSans.ttf");
-    TextRenderer::populate_characters_from_font(
-            "/usr/share/fonts/Hack Bold Nerd Font Complete.ttf",
-            level_font_characters);
-
 
     srand((unsigned)time(0));
-
 
     game_state = new GameState();
     game_state->level = -1;
@@ -118,7 +109,6 @@ void game_update(float dt) {
     // Reset game
 
     if(input->reset && game_state->game_over) {
-        std::cout << game_state->game_over << std::endl;
         game_reset();
     }
 
@@ -280,105 +270,84 @@ void game_render(float dt) {
     Renderer::draw_rect(plat->x, plat->y, plat->w, plat->h, 0.0f, plat->vertex_data, plat->shader, plat->color, game_state->projection);
     Renderer::draw_rect(ball->x, ball->y, ball->w, ball->h, -glm::sign(ball->vx)*ball->rotation, ball->vertex_data, ball->shader, ball->color, game_state->projection);
 
-    /*
-
-    // Points
-    TextRenderer::render_text(
-            "Points: "+std::to_string(game_state->points),
-            330.0f,
-            (float)HEIGHT - 40.0f,
-            0.65f,
-            glm::vec3(0.1f, 0.1f, 0.1f));
+    Font* f = &text_renderer->fonts[0];
 
     // Level advancement render
     if (game_state->level == 1 && (frame_time - game_state->last_timestamp) < 2)
-        TextRenderer::render_text(
+        add_text_render_queue(
+                300.0f,
+                (float)HEIGHT / 2.f,
                 "LEVEL 1!",
-                300.0f,
-                (float)HEIGHT / 2.f,
-                1.0f,
-                glm::vec3(0.1f, 0.1f, 0.1f),
-                level_font_characters,
-                level_text_shader);
+                f);
     if (game_state->level == 2 && (frame_time - game_state->last_timestamp) < 2)
-        TextRenderer::render_text(
+        add_text_render_queue(
+                300.0f,
+                (float)HEIGHT / 2.f,
                 "LEVEL 2!",
-                300.0f,
-                (float)HEIGHT / 2.f,
-                1.0f,
-                glm::vec3(0.1f, 0.1f, 0.1f),
-                level_font_characters,
-                level_text_shader);
+                f);
     if (game_state->level == 3 && (frame_time - game_state->last_timestamp) < 2)
-        TextRenderer::render_text(
+        add_text_render_queue(
+                300.0f,
+                (float)HEIGHT / 2.f,
                 "LEVEL 3!",
-                300.0f,
-                (float)HEIGHT / 2.f,
-                1.0f,
-                glm::vec3(0.1f, 0.1f, 0.1f),
-                level_font_characters,
-                level_text_shader);
+                f);
     if (game_state->level == 4 && (frame_time - game_state->last_timestamp) < 2)
-        TextRenderer::render_text(
+        add_text_render_queue(
+                300.0f,
+                (float)HEIGHT / 2.f,
                 "LEVEL 4!",
-                300.0f,
-                (float)HEIGHT / 2.f,
-                1.0f,
-                glm::vec3(0.1f, 0.1f, 0.1f),
-                level_font_characters,
-                level_text_shader);
+                f);
     if (game_state->level == 5 && (frame_time - game_state->last_timestamp) < 2)
-        TextRenderer::render_text(
-                "FINAL LEVEL!",
+        add_text_render_queue(
                 300.0f,
                 (float)HEIGHT / 2.f,
-                1.0f,
-                glm::vec3(0.1f, 0.1f, 0.1f),
-                level_font_characters,
-                level_text_shader);
+                "LEVEL 5!",
+                f);
     if (game_state->game_over && game_state->level != -1) { // FIXME: La shader non viene applicata
-        TextRenderer::render_text(
-                "GAME OVER",
+        add_text_render_queue(
                 300.0f,
                 (float)HEIGHT / 2.f,
-                1.0f,
-                glm::vec3(0.1f, 0.1f, 0.1f),
-                level_font_characters,
-                level_text_shader);
-        TextRenderer::render_text(
-                "You scored "+std::to_string(game_state->points)+" points!",
-                290.0f,
-                (float)HEIGHT / 2.f - 40.0f,
-                0.5f,
-                glm::vec3(0.1f, 0.1f, 0.1f),
-                level_font_characters);
+                "GAME OVER!",
+                f);
+        add_text_render_queue(
+                300.0f,
+                (float)HEIGHT / 2.f,
+                ("You scored "+std::to_string(game_state->points)+" points!").c_str(),
+                f);
     }
-    
+
+    render_text_queue(f, level_text_shader, glm::vec3(0.0f, 0.0f, 0.0f));
+
+    // Points
+    add_text_render_queue(
+            330.0f,
+            (float)HEIGHT - 40.0f,
+            ("Points: "+std::to_string(game_state->points)).c_str(),
+            f);
+
     if (game_state->print_debug_info) {
         // Movement info
-        TextRenderer::render_text(
-                "Angle: "+std::to_string(ball->rotation),
-                10.0f,
-                10.0f,
-                0.4f,
-                glm::vec3(0.1f, 0.1f, 0.1f));
-        TextRenderer::render_text(
-                "Velocity: "+std::to_string(ball->total_vel),
-                10.0f,
+        add_text_render_queue(
                 30.0f,
-                0.4f,
-                glm::vec3(0.1f, 0.1f, 0.1f));
+                25.0f,
+                ("Angle: "+std::to_string(ball->rotation)).c_str(),
+                f);
+        add_text_render_queue(
+                20.0f,
+                50.0f,
+                ("Velocity: "+std::to_string(ball->total_vel)).c_str(),
+                f);
 
         // FPS counter
-        TextRenderer::render_text(
-                "FPS: "+std::to_string(game_state->fps_displayed),
+        add_text_render_queue(
                 (float) WIDTH/2 - 20,
                 10.0f,
-                0.4f,
-                glm::vec3(0.1f, 0.1f, 0.1f));
+                ("FPS: "+std::to_string(game_state->fps_displayed)).c_str(),
+                f);
     }
 
-    */
+    render_text_queue(f, default_text_shader, glm::vec3(0.0f, 0.0f, 0.0f));
+
 }
 
 void game_reset() {

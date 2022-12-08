@@ -4,6 +4,7 @@
 #include "globals.h"
 
 #include "../include/stb_truetype.h"
+#include <bits/types/FILE.h>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -31,15 +32,16 @@ void text_render_init() {
     text_renderer->fonts = (Font*) malloc(sizeof(Font) * 1);
 
     Font* f = &text_renderer->fonts[0];
-    f->filename = "/usr/share/fonts/TTF/DejaVuSans.ttf";
+    f->filename = "fonts/Hack-Regular.ttf";
     f->first_char = 32;
     f->num_chars = 96;
     f->font_height = 32.0f;
     f->bitmap_width = 512;
     f->bitmap_height = 512;
     f->char_data = (stbtt_bakedchar*) malloc(sizeof(stbtt_bakedchar) * f->num_chars);
-    create_texture_font_atlas(f);
+    f->info = new stbtt_fontinfo();
 
+    create_texture_font_atlas(f);
 
 }
 
@@ -50,15 +52,19 @@ void create_texture_font_atlas(Font* font) {
     unsigned char ttf_buffer[1<<20];
     unsigned char temp_bitmap[font->bitmap_width * font->bitmap_height];
 
-    fread(ttf_buffer, 1, 1<<20, fopen(font->filename, "rb"));
+    FILE* font_file = fopen(font->filename, "rb");
+    fread(ttf_buffer, 1, 1<<20, font_file);
+    fclose(font_file);
+
+    // populate the font info
+    stbtt_InitFont(font->info, ttf_buffer, 0);
 
     stbtt_BakeFontBitmap(ttf_buffer, 0, font->font_height, temp_bitmap, font->bitmap_width, font->bitmap_height, font->first_char, font->num_chars, font->char_data);
 
+
     glGenTextures(1, &font->texture);
     glBindTexture(GL_TEXTURE_2D, font->texture);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, font->bitmap_width, font->bitmap_height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, temp_bitmap);
-
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, font->bitmap_width, font->bitmap_height, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
@@ -67,13 +73,32 @@ void create_texture_font_atlas(Font* font) {
 void add_text_render_queue(float x, float y, const char *text, Font* font) {
     int length = strlen(text);
 
+    /* float scale = stbtt_ScaleForPixelHeight(font->info, pixel_height); */
+    /* scale = 1; */
+
+    /* stbtt_bakedchar* scaled = new stbtt_bakedchar[font->num_chars]; */
+    stbtt_bakedchar* original = font->char_data;
+
+    /* std::cout << "scale: " << scale << std::endl; */
+
+    /* for(int i = 0; i < font->num_chars; i++) { */
+    /*     scaled[i].x0 = original[i].x0 * scale; */
+    /*     scaled[i].y0 = original[i].y0 * scale; */
+    /*     scaled[i].x1 = original[i].x1 * scale; */
+    /*     scaled[i].y1 = original[i].y1 * scale; */
+    /*     scaled[i].xadvance = original[i].xadvance * scale; */
+    /*     scaled[i].xoff = original[i].xoff; */
+    /*     scaled[i].yoff = original[i].yoff; */
+    /*     std::cout << "scaled_x: " << scaled[i].x0 << ",  original_x: " << original[i].x0 << std::endl; */
+    /* } */
+
     float vertices[length * 6][4];
 
     for(int i = 0; i < length; i++) {
         if (text[i] >= font->first_char && text[i] < font->first_char+font->num_chars) {
 
             stbtt_aligned_quad q;
-            stbtt_GetBakedQuad(font->char_data, font->bitmap_width, font->bitmap_height, text[i] - font->first_char, &x, &y, &q, 1);
+            stbtt_GetBakedQuad(original, font->bitmap_width, font->bitmap_height, text[i] - font->first_char, &x, &y, &q, 1);
 
             // down left
             vertices[i*6 + 0][0] = q.x0;

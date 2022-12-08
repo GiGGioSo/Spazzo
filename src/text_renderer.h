@@ -8,6 +8,7 @@ struct Font {
     const char* filename;
     unsigned int texture;
     stbtt_bakedchar* char_data;
+    stbtt_fontinfo* info;
     int first_char;
     int num_chars;
     int font_height;

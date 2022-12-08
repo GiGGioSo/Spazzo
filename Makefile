@@ -11,7 +11,7 @@ SRCS+=$(wildcard $(SRC)/*.c)
 all: $(BIN)
 
 $(BIN): $(SRCS)
-	$(CC) $(CFLAGS) $^ -g -o $@ -I/usr/include/freetype2 -lfreetype
+	$(CC) $(CFLAGS) $^ -g -o $@
 clean:
 	$(RM) $(BINDIR)/*
 
