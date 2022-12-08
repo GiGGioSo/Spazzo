@@ -117,11 +117,11 @@ int main() {
 
         game_render(delta_time);
         
-        add_text_render_queue(110.f, 110.f, "CI", &text_renderer->fonts[0]);
+        /* add_text_render_queue(110.f, 110.f, "CI", &text_renderer->fonts[0]); */
 
         /* add_text_render_queue(20.f, 20.f, "CI4", &text_renderer->fonts[0]); */
 
-        render_text_queue(&text_renderer->fonts[0], s, glm::vec3(1.0f, 0.0f, 0.0f));
+        /* render_text_queue(&text_renderer->fonts[0], s, glm::vec3(1.0f, 0.0f, 0.0f)); */
 
         glfwSwapBuffers(window);
         glfwPollEvents();

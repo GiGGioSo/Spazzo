@@ -27,9 +27,9 @@ void game_init() {
 
     // Text rendering initialization
     glm::mat4 text_projection = glm::ortho(
-            0.0f, (float)WIDTH, 
-            0.0f, (float)HEIGHT, 
-            0.0f, 1.0f);
+            0.0f, (float)WIDTH,
+            0.0f, (float)HEIGHT,
+            0.0f, 0.1f);
     // text shader
     default_text_shader = new Shader("res/shaders/default_text.vs", "res/shaders/default_text.fs");
     default_text_shader->use();
@@ -250,7 +250,7 @@ void game_update(float dt) {
     // Game over condition
     if (ball->x <= 0 && ball->vx != 0.f) { // left bound and game is not over
         game_state->game_over = true;
-        game_state->level = -1;
+        game_state->level = 0;
         std::cout << "\nGame Over!" << std::endl;
         game_state->last_timestamp = frame_time;
         ball->x = 0.f;
