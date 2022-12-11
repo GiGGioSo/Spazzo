@@ -19,6 +19,7 @@
 #include "../include/glm/ext.hpp"
 
 /* #include "../include/stb_image.h" */
+#include "quad_renderer.h"
 #include "text_renderer.h"
 #define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
 #include "../include/stb_truetype.h"
@@ -43,6 +44,7 @@ const int HEIGHT = 600;
 const char* TITLE = "spazzo";
 InputController* input = new InputController();
 RendererText* text_renderer = new RendererText();
+RendererQuad* quad_renderer = new RendererQuad();
 
 int main() {
 
@@ -79,22 +81,25 @@ int main() {
     glDebugMessageCallback(&DebugCallback, NULL);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
-
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     glViewport(0, 0, WIDTH, HEIGHT);
 
-        // Text rendering initialization
-    glm::mat4 text_projection = glm::ortho(
-            0.0f, (float)WIDTH, 
-            0.0f, (float)HEIGHT, 
-            0.0f, 1.0f);
+    // TEST QUADS RENDERING
 
-    Shader* s = new Shader("res/shaders/default_text.vs", "res/shaders/default_text.fs");
+    // Quads rendering initialization
+    glm::mat4 quad_projection = glm::ortho(
+            0.0f, (float)WIDTH,
+            (float)HEIGHT, 0.0f,
+            -1.0f, 1.0f);
+
+    Shader* s = new Shader("res/shaders/quad_default.vs", "res/shaders/quad_default.fs");
     s->use();
-    s->setMat4("projection", text_projection);
+    s->setMat4("projection", quad_projection);
+
 
     text_render_init();
+    quad_render_init();
 
     game_init();
 
@@ -116,13 +121,13 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         game_render(delta_time);
-        
-        /* add_text_render_queue(110.f, 110.f, "CI", &text_renderer->fonts[0]); */
 
-        /* add_text_render_queue(20.f, 20.f, "CI4", &text_renderer->fonts[0]); */
+        quad_render_add_queue(40.0f, 200.0f, 150.0f, 40.0f, glm::vec3(1.0f, 1.0f, 0.0f));
+        quad_render_add_queue(140.0f, 240.0f, 190.0f, 140.0f, glm::vec3(1.0f, 0.0f, 0.0f));
 
-        /* render_text_queue(&text_renderer->fonts[0], s, glm::vec3(1.0f, 0.0f, 0.0f)); */
+        quad_render_draw(s);
 
+        // Swap buffers and get events
         glfwSwapBuffers(window);
         glfwPollEvents();
     }

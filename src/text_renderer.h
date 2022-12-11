@@ -2,13 +2,13 @@
 #define TEXT_RENDERER_H
 
 #include "../include/stb_truetype.h"
+#include "../include/glm/glm.hpp"
 #include "shader.h"
 
 struct Font {
     const char* filename;
     unsigned int texture;
     stbtt_bakedchar* char_data;
-    stbtt_fontinfo* info;
     int first_char;
     int num_chars;
     int font_height;
@@ -26,10 +26,10 @@ struct RendererText {
 
 void text_render_init();
 
-void create_texture_font_atlas(Font* font);
+void text_render_create_font_atlas(Font* font);
 
-void add_text_render_queue(float x, float y, const char* text, Font* font);
+void text_render_add_queue(float x, float y, const char* text, glm::vec3 c, Font* font);
 
-void render_text_queue(Font* font, Shader* shader, glm::vec3 color);
+void text_render_draw(Font* font, Shader* shader);
 
 #endif

@@ -2,7 +2,6 @@
 #include "shader.h"
 #include "renderer.h"
 #include "text_renderer.h"
-#include "spazzo_structs.h"
 #include "../include/glfw3.h"
 #include <cmath>
 #include <cstdlib>
@@ -22,20 +21,20 @@ Ball* ball;
 Platform* plat;
 GameState* game_state;
 
-
 void game_init() {
 
     // Text rendering initialization
     glm::mat4 text_projection = glm::ortho(
             0.0f, (float)WIDTH,
-            0.0f, (float)HEIGHT,
-            0.0f, 0.1f);
+            (float)HEIGHT, 0.0f,
+            -1.0f, 1.0f);
+
     // text shader
-    default_text_shader = new Shader("res/shaders/default_text.vs", "res/shaders/default_text.fs");
+    default_text_shader = new Shader("res/shaders/text_default.vs", "res/shaders/text_default.fs");
     default_text_shader->use();
     default_text_shader->setMat4("projection", text_projection);
 
-    level_text_shader = new Shader("res/shaders/level_font.vs", "res/shaders/default_text.fs");
+    level_text_shader = new Shader("res/shaders/level_font.vs", "res/shaders/text_default.fs");
     level_text_shader->use();
     level_text_shader->setMat4("projection", text_projection);
 
@@ -112,6 +111,17 @@ void game_update(float dt) {
         game_reset();
     }
 
+    // debug info
+    if (input->toggle_debug) {
+        if (!game_state->was_debug_info_displayed) {
+            game_state->print_debug_info = !game_state->print_debug_info;
+        }
+
+        game_state->was_debug_info_displayed = true;
+    } else {
+        game_state->was_debug_info_displayed = false;
+    }
+
     if (game_state->game_over) return;
 
     // update stuff based on input
@@ -125,16 +135,6 @@ void game_update(float dt) {
 
         plat->vy = plat->max_vel;
 
-    }
-    // debug info
-    if (input->toggle_debug) {
-        if (!game_state->was_debug_info_displayed) {
-            game_state->print_debug_info = !game_state->print_debug_info;
-        }
-
-        game_state->was_debug_info_displayed = true;
-    } else {
-        game_state->was_debug_info_displayed = false;
     }
 
     // Ball movement
@@ -274,79 +274,90 @@ void game_render(float dt) {
 
     // Level advancement render
     if (game_state->level == 1 && (frame_time - game_state->last_timestamp) < 2)
-        add_text_render_queue(
+        text_render_add_queue(
                 300.0f,
                 (float)HEIGHT / 2.f,
                 "LEVEL 1!",
+                glm::vec3(0.0f, 0.0f, 0.0f),
                 f);
     if (game_state->level == 2 && (frame_time - game_state->last_timestamp) < 2)
-        add_text_render_queue(
+        text_render_add_queue(
                 300.0f,
                 (float)HEIGHT / 2.f,
                 "LEVEL 2!",
+                glm::vec3(0.0f, 0.0f, 0.0f),
                 f);
     if (game_state->level == 3 && (frame_time - game_state->last_timestamp) < 2)
-        add_text_render_queue(
+        text_render_add_queue(
                 300.0f,
                 (float)HEIGHT / 2.f,
                 "LEVEL 3!",
+                glm::vec3(0.0f, 0.0f, 0.0f),
                 f);
     if (game_state->level == 4 && (frame_time - game_state->last_timestamp) < 2)
-        add_text_render_queue(
+        text_render_add_queue(
                 300.0f,
                 (float)HEIGHT / 2.f,
                 "LEVEL 4!",
+                glm::vec3(0.0f, 0.0f, 0.0f),
                 f);
     if (game_state->level == 5 && (frame_time - game_state->last_timestamp) < 2)
-        add_text_render_queue(
+        text_render_add_queue(
                 300.0f,
                 (float)HEIGHT / 2.f,
                 "LEVEL 5!",
+                glm::vec3(0.0f, 0.0f, 0.0f),
                 f);
-    if (game_state->game_over && game_state->level != -1) { // FIXME: La shader non viene applicata
-        add_text_render_queue(
+    if (game_state->game_over && game_state->level != -1) {
+        text_render_add_queue(
                 300.0f,
                 (float)HEIGHT / 2.f,
                 "GAME OVER!",
+                glm::vec3(0.0f, 0.0f, 0.0f),
                 f);
-        add_text_render_queue(
+        text_render_add_queue(
                 300.0f,
-                (float)HEIGHT / 2.f,
+                (float)HEIGHT / 2.f + 40.0f,
                 ("You scored "+std::to_string(game_state->points)+" points!").c_str(),
+                glm::vec3(0.0f, 0.0f, 0.0f),
                 f);
     }
 
-    render_text_queue(f, level_text_shader, glm::vec3(0.0f, 0.0f, 0.0f));
+    text_render_draw(f, level_text_shader);
 
     // Points
-    add_text_render_queue(
+    text_render_add_queue(
             330.0f,
-            (float)HEIGHT - 40.0f,
+            (float)40.0f,
             ("Points: "+std::to_string(game_state->points)).c_str(),
+            glm::vec3(1.0f, 0.0f, 0.0f),
             f);
 
     if (game_state->print_debug_info) {
         // Movement info
-        add_text_render_queue(
+        text_render_add_queue(
                 30.0f,
-                25.0f,
+                (float) HEIGHT - 10.0f,
                 ("Angle: "+std::to_string(ball->rotation)).c_str(),
+                glm::vec3(0.0f, 0.0f, 0.0f),
                 f);
-        add_text_render_queue(
-                20.0f,
-                50.0f,
+        text_render_add_queue(
+                30.0f,
+                (float) HEIGHT - 40.0f,
                 ("Velocity: "+std::to_string(ball->total_vel)).c_str(),
+                glm::vec3(0.0f, 0.0f, 0.0f),
                 f);
 
         // FPS counter
-        add_text_render_queue(
+        text_render_add_queue(
                 (float) WIDTH/2 - 20,
-                10.0f,
+                (float) HEIGHT - 20.0f,
                 ("FPS: "+std::to_string(game_state->fps_displayed)).c_str(),
+                glm::vec3(0.0f, 0.0f, 0.0f),
                 f);
     }
 
-    render_text_queue(f, default_text_shader, glm::vec3(0.0f, 0.0f, 0.0f));
+    text_render_draw(f, default_text_shader);
 
 }
 

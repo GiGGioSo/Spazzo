@@ -4,11 +4,9 @@
 #include "globals.h"
 
 #include "../include/stb_truetype.h"
-#include <bits/types/FILE.h>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
-
 
 void text_render_init() {
 
@@ -18,10 +16,12 @@ void text_render_init() {
     glBindVertexArray(text_renderer->vao);
     glBindBuffer(GL_ARRAY_BUFFER, text_renderer->vbo);
 
-    // 1000 is the max number of character displayable together on the screen
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4 * 1000, NULL, GL_DYNAMIC_DRAW);
+    // NOTE: 1000 is the max number of character displayable together on the screen
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 7 * 1000, NULL, GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), 0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*) (4 * sizeof(float)));
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -36,16 +36,14 @@ void text_render_init() {
     f->first_char = 32;
     f->num_chars = 96;
     f->font_height = 32.0f;
-    f->bitmap_width = 512;
-    f->bitmap_height = 512;
+    f->bitmap_width = 1024;
+    f->bitmap_height = 1024;
     f->char_data = (stbtt_bakedchar*) malloc(sizeof(stbtt_bakedchar) * f->num_chars);
-    f->info = new stbtt_fontinfo();
 
-    create_texture_font_atlas(f);
-
+    text_render_create_font_atlas(f);
 }
 
-void create_texture_font_atlas(Font* font) {
+void text_render_create_font_atlas(Font* font) {
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restrictions
 
@@ -56,11 +54,7 @@ void create_texture_font_atlas(Font* font) {
     fread(ttf_buffer, 1, 1<<20, font_file);
     fclose(font_file);
 
-    // populate the font info
-    stbtt_InitFont(font->info, ttf_buffer, 0);
-
     stbtt_BakeFontBitmap(ttf_buffer, 0, font->font_height, temp_bitmap, font->bitmap_width, font->bitmap_height, font->first_char, font->num_chars, font->char_data);
-
 
     glGenTextures(1, &font->texture);
     glBindTexture(GL_TEXTURE_2D, font->texture);
@@ -70,66 +64,78 @@ void create_texture_font_atlas(Font* font) {
 
 
 
-void add_text_render_queue(float x, float y, const char *text, Font* font) {
+void text_render_add_queue(float x, float y, const char *text, glm::vec3 c, Font* font) {
     int length = strlen(text);
 
-    /* float scale = stbtt_ScaleForPixelHeight(font->info, pixel_height); */
-    /* scale = 1; */
-
-    /* stbtt_bakedchar* scaled = new stbtt_bakedchar[font->num_chars]; */
-    stbtt_bakedchar* original = font->char_data;
-
-    /* std::cout << "scale: " << scale << std::endl; */
-
-    /* for(int i = 0; i < font->num_chars; i++) { */
-    /*     scaled[i].x0 = original[i].x0 * scale; */
-    /*     scaled[i].y0 = original[i].y0 * scale; */
-    /*     scaled[i].x1 = original[i].x1 * scale; */
-    /*     scaled[i].y1 = original[i].y1 * scale; */
-    /*     scaled[i].xadvance = original[i].xadvance * scale; */
-    /*     scaled[i].xoff = original[i].xoff; */
-    /*     scaled[i].yoff = original[i].yoff; */
-    /*     std::cout << "scaled_x: " << scaled[i].x0 << ",  original_x: " << original[i].x0 << std::endl; */
-    /* } */
-
-    float vertices[length * 6][4];
+    float vertices[length * 6][7];
 
     for(int i = 0; i < length; i++) {
         if (text[i] >= font->first_char && text[i] < font->first_char+font->num_chars) {
 
             stbtt_aligned_quad q;
-            stbtt_GetBakedQuad(original, font->bitmap_width, font->bitmap_height, text[i] - font->first_char, &x, &y, &q, 1);
+            stbtt_GetBakedQuad(font->char_data, font->bitmap_width, font->bitmap_height, text[i] - font->first_char, &x, &y, &q, 1);
+
+            // TODO: After having inverted the bitmap, you'll probably want to do (1 - y_texCoord)
 
             // down left
             vertices[i*6 + 0][0] = q.x0;
             vertices[i*6 + 0][1] = q.y1;
             vertices[i*6 + 0][2] = q.s0;
             vertices[i*6 + 0][3] = q.t1;
+            // color
+            vertices[i*6 + 0][4] = c.x;
+            vertices[i*6 + 0][5] = c.y;
+            vertices[i*6 + 0][6] = c.z;
+
             // top left
             vertices[i*6 + 1][0] = q.x0;
             vertices[i*6 + 1][1] = q.y0;
             vertices[i*6 + 1][2] = q.s0;
             vertices[i*6 + 1][3] = q.t0;
+            //color
+            vertices[i*6 + 1][4] = c.x;
+            vertices[i*6 + 1][5] = c.y;
+            vertices[i*6 + 1][6] = c.z;
+
             // top right
             vertices[i*6 + 2][0] = q.x1;
             vertices[i*6 + 2][1] = q.y0;
             vertices[i*6 + 2][2] = q.s1;
             vertices[i*6 + 2][3] = q.t0;
+            //color
+            vertices[i*6 + 2][4] = c.x;
+            vertices[i*6 + 2][5] = c.y;
+            vertices[i*6 + 2][6] = c.z;
+
             // down left
             vertices[i*6 + 3][0] = q.x0;
             vertices[i*6 + 3][1] = q.y1;
             vertices[i*6 + 3][2] = q.s0;
             vertices[i*6 + 3][3] = q.t1;
+            //color
+            vertices[i*6 + 3][4] = c.x;
+            vertices[i*6 + 3][5] = c.y;
+            vertices[i*6 + 3][6] = c.z;
+
             // top right
             vertices[i*6 + 4][0] = q.x1;
             vertices[i*6 + 4][1] = q.y0;
             vertices[i*6 + 4][2] = q.s1;
             vertices[i*6 + 4][3] = q.t0;
-            // down left
+            //color
+            vertices[i*6 + 4][4] = c.x;
+            vertices[i*6 + 4][5] = c.y;
+            vertices[i*6 + 4][6] = c.z;
+
+            // down right
             vertices[i*6 + 5][0] = q.x1;
             vertices[i*6 + 5][1] = q.y1;
             vertices[i*6 + 5][2] = q.s1;
             vertices[i*6 + 5][3] = q.t1;
+            //color
+            vertices[i*6 + 5][4] = c.x;
+            vertices[i*6 + 5][5] = c.y;
+            vertices[i*6 + 5][6] = c.z;
         }
     }
 
@@ -149,10 +155,9 @@ void add_text_render_queue(float x, float y, const char *text, Font* font) {
 
 }
 
-void render_text_queue(Font* font, Shader *shader, glm::vec3 color) {
+void text_render_draw(Font* font, Shader *shader) {
 
     shader->use();
-    shader->setVec3("textColor", color);
 
     glActiveTexture(GL_TEXTURE0);
 
