@@ -7,7 +7,6 @@
 #include "shader.h"
 
 struct Ball {
-    unsigned int vertex_data;
     Shader* shader;
     float x, y, w, h;
     float vx, vy;
@@ -19,7 +18,6 @@ struct Ball {
 };
 
 struct Platform {
-    unsigned int vertex_data;
     Shader* shader;
     float x, y, w, h;
     float vx, vy;

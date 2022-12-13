@@ -4,8 +4,7 @@
 #include "globals.h"
 
 #include <iostream>
-
-// TODO: Implement rotations
+#include <math.h>
 
 void quad_render_init() {
 
@@ -33,7 +32,10 @@ void quad_render_init() {
 
 }
 
-void quad_render_add_queue(float x, float y, float w, float h, glm::vec3 c) {
+void quad_render_add_queue(float x, float y, float w, float h, float r, glm::vec3 c) {
+
+    float center_x = x + w/2;
+    float center_y = y + h/2;
 
     float vertices[] = {
         x  , y+h, c.x, c.y, c.z,
@@ -43,6 +45,19 @@ void quad_render_add_queue(float x, float y, float w, float h, glm::vec3 c) {
         x+w, y  , c.x, c.y, c.z,
         x+w, y+h, c.x, c.y, c.z,
     };
+
+    r = glm::radians(r);
+
+    for(int i = 0; i < 6; i++) {
+        float vx = vertices[i*5 + 0];
+        float vy = vertices[i*5 + 1];
+
+        float newX = center_x + (vx - center_x) * cos(r) + (vy - center_y) * sin(r);
+        float newY = center_y + (vx - center_x) * sin(r) - (vy - center_y) * cos(r);
+
+        vertices[i*5 + 0] = newX;
+        vertices[i*5 + 1] = newY;
+    }
 
     glBindVertexArray(quad_renderer->vao);
     glBindBuffer(GL_ARRAY_BUFFER, quad_renderer->vbo);

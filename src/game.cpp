@@ -1,4 +1,5 @@
 #include "game.h"
+#include "quad_renderer.h"
 #include "shader.h"
 #include "renderer.h"
 #include "text_renderer.h"
@@ -24,7 +25,7 @@ GameState* game_state;
 void game_init() {
 
     // Text rendering initialization
-    glm::mat4 text_projection = glm::ortho(
+    glm::mat4 projection = glm::ortho(
             0.0f, (float)WIDTH,
             (float)HEIGHT, 0.0f,
             -1.0f, 1.0f);
@@ -32,11 +33,11 @@ void game_init() {
     // text shader
     default_text_shader = new Shader("res/shaders/text_default.vs", "res/shaders/text_default.fs");
     default_text_shader->use();
-    default_text_shader->setMat4("projection", text_projection);
+    default_text_shader->setMat4("projection", projection);
 
     level_text_shader = new Shader("res/shaders/level_font.vs", "res/shaders/text_default.fs");
     level_text_shader->use();
-    level_text_shader->setMat4("projection", text_projection);
+    level_text_shader->setMat4("projection", projection);
 
     srand((unsigned)time(0));
 
@@ -57,8 +58,9 @@ void game_init() {
     ball->total_vel = 0.f;
     ball->angle_acc = 0.f;
     ball->rotation = 20.f;
-    ball->vertex_data = Renderer::generate_vertex_data();
-    ball->shader = new Shader("res/shaders/ball.vs", "res/shaders/default.fs");
+    ball->shader = new Shader("res/shaders/ball.vs", "res/shaders/quad_default.fs");
+    ball->shader->use();
+    ball->shader->setMat4("projection", projection);
     ball->x = 0.f;
     ball->y = 50.f;
     ball->w= 30.f;
@@ -69,8 +71,9 @@ void game_init() {
 
     plat = new Platform();
     plat->max_vel = 250.f;
-    plat->vertex_data = Renderer::generate_vertex_data();
-    plat->shader = new Shader("res/shaders/default.vs", "res/shaders/default.fs");
+    plat->shader = new Shader("res/shaders/quad_default.vs", "res/shaders/quad_default.fs");
+    plat->shader->use();
+    plat->shader->setMat4("projection", projection);
     plat->w= 20.f;
     plat->h= 200.f;
     plat->y = HEIGHT / 2.f - plat->h / 2.f;
@@ -267,8 +270,11 @@ void game_render(float dt) {
 
     float frame_time = (float) glfwGetTime();
 
-    Renderer::draw_rect(plat->x, plat->y, plat->w, plat->h, 0.0f, plat->vertex_data, plat->shader, plat->color, game_state->projection);
-    Renderer::draw_rect(ball->x, ball->y, ball->w, ball->h, -glm::sign(ball->vx)*ball->rotation, ball->vertex_data, ball->shader, ball->color, game_state->projection);
+    quad_render_add_queue(plat->x, plat->y, plat->w, plat->h, 0.0f, plat->color);
+    quad_render_draw(plat->shader);
+
+    quad_render_add_queue(ball->x, ball->y, ball->w, ball->h, -glm::sign(ball->vx) * ball->rotation, ball->color);
+    quad_render_draw(ball->shader);
 
     Font* f = &text_renderer->fonts[0];
 

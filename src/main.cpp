@@ -122,10 +122,10 @@ int main() {
 
         game_render(delta_time);
 
-        quad_render_add_queue(40.0f, 200.0f, 150.0f, 40.0f, glm::vec3(1.0f, 1.0f, 0.0f));
-        quad_render_add_queue(140.0f, 240.0f, 190.0f, 140.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+        /* quad_render_add_queue(40.0f, 200.0f, 150.0f, 40.0f, 0.0f, glm::vec3(1.0f, 1.0f, 0.0f)); */
+        /* quad_render_add_queue(140.0f, 240.0f, 190.0f, 140.0f, 20.0f, glm::vec3(1.0f, 0.0f, 0.0f)); */
 
-        quad_render_draw(s);
+        /* quad_render_draw(s); */
 
         // Swap buffers and get events
         glfwSwapBuffers(window);

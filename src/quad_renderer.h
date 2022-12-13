@@ -13,7 +13,7 @@ struct RendererQuad {
 
 void quad_render_init();
 
-void quad_render_add_queue(float x, float y, float w, float h, glm::vec3 c);
+void quad_render_add_queue(float x, float y, float w, float h, float r, glm::vec3 c);
 
 void quad_render_draw(Shader* shader);
 
