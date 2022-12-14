@@ -24,13 +24,16 @@
 #define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
 #include "../include/stb_truetype.h"
 
+#define MINIAUDIO_IMPLEMENTATION
+#include "../include/miniaudio.h"
+
 #include "shader.h"
 #include "renderer.h"
 #include "game.h"
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-static void DebugCallback(
+static void debug_callback(
     GLenum source, GLenum type, GLuint id, GLenum severity,
     GLsizei length, const GLchar* message, const void* user);
 
@@ -78,25 +81,12 @@ int main() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // enable debug
-    glDebugMessageCallback(&DebugCallback, NULL);
+    glDebugMessageCallback(&debug_callback, NULL);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     glViewport(0, 0, WIDTH, HEIGHT);
-
-    // TEST QUADS RENDERING
-
-    // Quads rendering initialization
-    glm::mat4 quad_projection = glm::ortho(
-            0.0f, (float)WIDTH,
-            (float)HEIGHT, 0.0f,
-            -1.0f, 1.0f);
-
-    Shader* s = new Shader("res/shaders/quad_default.vs", "res/shaders/quad_default.fs");
-    s->use();
-    s->setMat4("projection", quad_projection);
-
 
     text_render_init();
     quad_render_init();
@@ -122,10 +112,6 @@ int main() {
 
         game_render(delta_time);
 
-        /* quad_render_add_queue(40.0f, 200.0f, 150.0f, 40.0f, 0.0f, glm::vec3(1.0f, 1.0f, 0.0f)); */
-        /* quad_render_add_queue(140.0f, 240.0f, 190.0f, 140.0f, 20.0f, glm::vec3(1.0f, 0.0f, 0.0f)); */
-
-        /* quad_render_draw(s); */
 
         // Swap buffers and get events
         glfwSwapBuffers(window);
@@ -143,7 +129,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-static void DebugCallback(
+static void debug_callback(
     GLenum source, GLenum type, GLuint id, GLenum severity,
     GLsizei length, const GLchar* message, const void* user)
 {

@@ -11,7 +11,7 @@ SRCS+=$(wildcard $(SRC)/*.c)
 all: $(BIN)
 
 $(BIN): $(SRCS)
-	$(CC) $(CFLAGS) $^ -g -o $@
+	$(CC) $(CFLAGS) $^ -g -o $@ -ldl -lpthread -lm
 clean:
 	$(RM) $(BINDIR)/*
 

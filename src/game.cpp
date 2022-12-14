@@ -21,6 +21,7 @@ Shader* default_text_shader;
 Ball* ball;
 Platform* plat;
 GameState* game_state;
+SoundManager* sound;
 
 void game_init() {
 
@@ -81,6 +82,37 @@ void game_init() {
     plat->vx = 0.f;
     plat->vy = 0.f;
     plat->color = glm::vec3(0.9f, 0.5f, 0.3f);
+
+    // Sound
+    sound = (SoundManager*) malloc(sizeof(SoundManager));
+    if (ma_engine_init(NULL, &sound->engine)) {
+        std::cout << "[ERROR] Failed to init the sound engine." << std::endl;
+    }
+    if (ma_sound_init_from_file(
+            &sound->engine,
+            "res/sounds/ball_bounce.wav",
+            MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
+            NULL, NULL,
+            &sound->ball_bounce)) {
+        std::cout << "[ERROR] Failed to load file \"ball_bounce.wav\"." << std::endl;
+    }
+    if (ma_sound_init_from_file(
+            &sound->engine,
+            "res/sounds/level_up.wav",
+            MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
+            NULL, NULL,
+            &sound->level_up)) {
+        std::cout << "[ERROR] Failed to load file \"level_up.wav\"." << std::endl;
+    }
+    if (ma_sound_init_from_file(
+            &sound->engine,
+            "res/sounds/game_over.wav",
+            MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC,
+            NULL, NULL,
+            &sound->game_over)) {
+        std::cout << "[ERROR] Failed to load file \"game_over.wav\"." << std::endl;
+    }
+    
 }
 
 void game_free() {
@@ -88,6 +120,11 @@ void game_free() {
     delete ball;
     delete plat;
     delete game_state;
+    ma_sound_uninit(&sound->ball_bounce);
+    ma_sound_uninit(&sound->level_up);
+    ma_sound_uninit(&sound->game_over);
+    ma_engine_uninit(&sound->engine);
+    delete sound;
 }
 
 void game_update(float dt) {
@@ -146,14 +183,17 @@ void game_update(float dt) {
     if (ball->x + ball->w > WIDTH){ //right bound
         ball->x = WIDTH - ball->w;
         ball->vx *= -1;
+        sound->bounced = true;
     }
     if (ball->y < 0) { // upper bound
         ball->y = 0.f;
-        ball->rotation *= -1; // don't directly touch vy of the ball, just change the angle
+        ball->rotation *= -1; // NOTE: don't directly touch vy of the ball, just change the angle
+        sound->bounced = true;
     }
     if (ball->y + ball->h > HEIGHT) { // downer bound
         ball->y = HEIGHT - ball->h;
         ball->rotation *= -1;
+        sound->bounced = true;
     }
 
     // Platform movement
@@ -165,6 +205,8 @@ void game_update(float dt) {
     if (ball->x < plat->x+plat->w && // ball is on the same vertical level of the platform
         ball->vx < 0 &&
         !(ball->y > plat->y+plat->h || ball->y+ball->h < plat->y)) { // is NOT outside of the platform
+
+        sound->bounced = true;
 
         //increase points
         game_state->points += 1;
@@ -225,11 +267,13 @@ void game_update(float dt) {
         game_state->last_timestamp = frame_time;
         ball->color = glm::vec3(0.8f, 0.8f, 0.2f);
         std::cout << "LEVEL 2!" << std::endl;
+        sound->leveled = true;
     } else if (game_state->level == 2 && plat->h <= 130) { // 120
         game_state->level = 3;
         game_state->last_timestamp = frame_time;
         ball->color = glm::vec3(0.8f, 0.2f, 0.2f);
         std::cout << "LEVEL 3!" << std::endl;
+        sound->leveled = true;
     } else if (game_state->level == 3 && game_state->lvl3_ball_touches > 5) { // 3
         game_state->level = 4;
         game_state->last_timestamp = frame_time;
@@ -238,10 +282,12 @@ void game_update(float dt) {
         ball->shader->setBool("shake", true);
         ball->shader->setFloat("shake_strength", ball->shake_strength);
         std::cout << "LEVEL 4!" << std::endl;
+        sound->leveled = true;
     } else if (game_state->level == 4 && ball->shake_strength > 0.020) {
         game_state->level = 5;
         game_state->last_timestamp = frame_time;
         std::cout << "FINAL LEVEL!" << std::endl;
+        sound->leveled = true;
     }
 
     if (game_state->level >= 4) {
@@ -263,6 +309,30 @@ void game_update(float dt) {
         ball->shader->use();
         ball->shader->setBool("shake", false);
         ball->color = glm::vec3(0.8f, 0.8f, 0.8f);
+
+        // game_over sound
+        if (ma_sound_is_playing(&sound->game_over)) {
+            ma_sound_seek_to_pcm_frame(&sound->game_over, 0);
+        }
+        ma_sound_start(&sound->game_over);
+    }
+
+    // Sound stuff
+    // If the sound was playing, rewind it and replay it
+    if (sound->bounced) {
+        if (ma_sound_is_playing(&sound->ball_bounce)) {
+            ma_sound_seek_to_pcm_frame(&sound->ball_bounce, 0);
+        }
+        ma_sound_start(&sound->ball_bounce);
+        sound->bounced = false;
+    }
+
+    if (sound->leveled) {
+        if (ma_sound_is_playing(&sound->level_up)) {
+            ma_sound_seek_to_pcm_frame(&sound->level_up, 0);
+        }
+        ma_sound_start(&sound->level_up);
+        sound->leveled = false;
     }
 }
 
@@ -311,7 +381,7 @@ void game_render(float dt) {
         text_render_add_queue(
                 300.0f,
                 (float)HEIGHT / 2.f,
-                "LEVEL 5!",
+                "FINAL LEVEL!",
                 glm::vec3(0.0f, 0.0f, 0.0f),
                 f);
     if (game_state->game_over && game_state->level != -1) {
@@ -392,4 +462,8 @@ void game_reset() {
     game_state->level = 1;
     std::cout << "LEVEL 1!" << std::endl;
     game_state->last_timestamp = glfwGetTime();
+
+    ma_sound_stop(&sound->game_over);
+    ma_sound_seek_to_pcm_frame(&sound->game_over, 0);
+    sound->leveled = true;
 }

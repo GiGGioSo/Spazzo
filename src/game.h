@@ -4,6 +4,8 @@
 #include "../include/glm/glm.hpp"
 #define GLFW_INCLUDE_NONE
 #include "../include/GLFW/glfw3.h"
+/* #define MINIAUDIO_IMPLEMENTATION */
+#include "../include/miniaudio.h"
 #include "shader.h"
 
 struct Ball {
@@ -43,6 +45,18 @@ struct GameState {
     int fps_counter;
     int fps_displayed;
     float fps_time_from_last_update;
+};
+
+struct SoundManager {
+    ma_engine engine;
+
+    bool bounced;
+    ma_sound ball_bounce;
+
+    bool leveled;
+    ma_sound level_up;
+
+    ma_sound game_over;
 };
 
 void game_init();
