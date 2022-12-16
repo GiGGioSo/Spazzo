@@ -3,7 +3,6 @@
 
 #include "globals.h"
 
-#include "../include/stb_truetype.h"
 #include <cstdio>
 #include <cstring>
 #include <iostream>

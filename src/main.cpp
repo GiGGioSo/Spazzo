@@ -3,16 +3,12 @@
 
 #include <iostream>
 #include <math.h>
-
 #include "globals.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
 #include "../include/stb_truetype.h"
+
 #include "game.h"
-
-
-// TODO: Compile into objects, and then link into executable
-
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 static void debug_callback(
@@ -51,7 +47,7 @@ int main() {
     }
     glfwMakeContextCurrent(window);
 
-    // disable vsync
+    // 1: VSYNC,  0: NO_VSYNC
     glfwSwapInterval(0);
 
     // initialize glad
@@ -83,7 +79,7 @@ int main() {
         last_frame = this_frame;
 
         // input
-        update_InputController(window);
+        input_controller_update(window);
 
         // update
         game_update(delta_time);

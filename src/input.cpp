@@ -3,7 +3,7 @@
 #include "globals.h"
 #include <iostream>
 
-void update_InputController(GLFWwindow *window) {
+void input_controller_update(GLFWwindow *window) {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }

@@ -4,7 +4,7 @@
 #include "../include/glm/glm.hpp"
 #define GLFW_INCLUDE_NONE
 #include "../include/GLFW/glfw3.h"
-/* #define MINIAUDIO_IMPLEMENTATION */
+
 #include "miniaudio.h"
 #include "shaderer.h"
 

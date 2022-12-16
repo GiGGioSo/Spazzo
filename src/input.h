@@ -16,6 +16,6 @@ struct InputController {
 /* Updates the InputController global struct
  *
  */
-void update_InputController(GLFWwindow* window);
+void input_controller_update(GLFWwindow* window);
 
 #endif

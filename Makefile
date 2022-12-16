@@ -1,23 +1,32 @@
 
 CC=g++
-CFLAGS=-lglfw
+CFLAGS=-g -lglfw -ldl -lpthread -lm -Wall
 SRC=src
+OBJ=obj
 BINDIR=bin
 BIN=$(BINDIR)/spazzo
 
-SRCS=$(wildcard $(SRC)/*.cpp)
-SRCS+=$(wildcard $(SRC)/*.c)
+SRCS_CPP=$(wildcard $(SRC)/*.cpp)
+OBJS_CPP = $(patsubst $(SRC)/%.cpp, $(OBJ)/%.o, $(SRCS_CPP))
 
-all: $(BIN)
+SRCS_C=$(wildcard $(SRC)/*.c)
+OBJS_C=$(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SRCS_C))
 
-$(BIN): $(SRCS)
-	$(CC) $(CFLAGS) $^ -g -o $@ -ldl -lpthread -lm
+SRCS = $(SRCS_C) $(SRCS_CPP)
+OBJS = $(OBJS_C) $(OBJS_CPP)
+
+
+$(BIN): $(OBJS)
+	$(CC) $(CFLAGS) $^ -o $@
+
+$(OBJ)/%.o: $(SRC)/%.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ)/%.o: $(SRC)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# NOTE: Whit this, the clean is executed even if there's a file called `clean`
+.PHONY: clean
 clean:
-	$(RM) $(BINDIR)/*
-
-
-
-
-
-#$(CC) $(CFLAGS) $^ -g -o $@ -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sysprof-4 -pthread -L/usr/local/lib -lfreetype
+	$(RM) $(OBJ)/* $(BINDIR)/*
 
