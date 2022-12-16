@@ -72,9 +72,9 @@ void quad_render_add_queue(float x, float y, float w, float h, float r, glm::vec
 
 }
 
-void quad_render_draw(Shader *shader) {
+void quad_render_draw(Shader s) {
 
-    shader->use();
+    glUseProgram(s);
 
     glBindVertexArray(quad_renderer->vao);
 

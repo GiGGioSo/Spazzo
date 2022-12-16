@@ -75,8 +75,6 @@ void text_render_add_queue(float x, float y, const char *text, glm::vec3 c, Font
             stbtt_aligned_quad q;
             stbtt_GetBakedQuad(font->char_data, font->bitmap_width, font->bitmap_height, text[i] - font->first_char, &x, &y, &q, 1);
 
-            // TODO: After having inverted the bitmap, you'll probably want to do (1 - y_texCoord)
-
             // down left
             vertices[i*6 + 0][0] = q.x0;
             vertices[i*6 + 0][1] = q.y1;
@@ -155,9 +153,9 @@ void text_render_add_queue(float x, float y, const char *text, glm::vec3 c, Font
 
 }
 
-void text_render_draw(Font* font, Shader *shader) {
+void text_render_draw(Font* font, Shader s) {
 
-    shader->use();
+    glUseProgram(s);
 
     glActiveTexture(GL_TEXTURE0);
 

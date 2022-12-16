@@ -5,11 +5,11 @@
 #define GLFW_INCLUDE_NONE
 #include "../include/GLFW/glfw3.h"
 /* #define MINIAUDIO_IMPLEMENTATION */
-#include "../include/miniaudio.h"
-#include "shader.h"
+#include "miniaudio.h"
+#include "shaderer.h"
 
 struct Ball {
-    Shader* shader;
+    Shader s;
     float x, y, w, h;
     float vx, vy;
     float total_vel;
@@ -20,7 +20,7 @@ struct Ball {
 };
 
 struct Platform {
-    Shader* shader;
+    Shader s;
     float x, y, w, h;
     float vx, vy;
     float max_vel;

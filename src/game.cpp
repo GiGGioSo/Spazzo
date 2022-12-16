@@ -1,10 +1,8 @@
 #include "game.h"
 #include "quad_renderer.h"
-#include "shader.h"
-#include "renderer.h"
+#include "shaderer.h"
 #include "text_renderer.h"
 #include "../include/glfw3.h"
-#include <cmath>
 #include <cstdlib>
 #include "../include/glm/common.hpp"
 #include "../include/glm/ext.hpp"
@@ -14,9 +12,10 @@
 
 #include "globals.h"
 
+
 // Custom font for the change of level indication
-Shader* level_text_shader;
-Shader* default_text_shader;
+Shader level_text_shader;
+Shader default_text_shader;
 
 Ball* ball;
 Platform* plat;
@@ -32,13 +31,11 @@ void game_init() {
             -1.0f, 1.0f);
 
     // text shader
-    default_text_shader = new Shader("res/shaders/text_default.vs", "res/shaders/text_default.fs");
-    default_text_shader->use();
-    default_text_shader->setMat4("projection", projection);
+    shaderer_create_program(&default_text_shader, "res/shaders/text_default.vs", "res/shaders/text_default.fs");
+    shaderer_set_mat4(default_text_shader, "projection", projection);
 
-    level_text_shader = new Shader("res/shaders/level_font.vs", "res/shaders/text_default.fs");
-    level_text_shader->use();
-    level_text_shader->setMat4("projection", projection);
+    shaderer_create_program(&level_text_shader, "res/shaders/level_font.vs", "res/shaders/text_default.fs");
+    shaderer_set_mat4(level_text_shader, "projection", projection);
 
     srand((unsigned)time(0));
 
@@ -59,9 +56,8 @@ void game_init() {
     ball->total_vel = 0.f;
     ball->angle_acc = 0.f;
     ball->rotation = 20.f;
-    ball->shader = new Shader("res/shaders/ball.vs", "res/shaders/quad_default.fs");
-    ball->shader->use();
-    ball->shader->setMat4("projection", projection);
+    shaderer_create_program(&ball->s, "res/shaders/ball.vs", "res/shaders/quad_default.fs");
+    shaderer_set_mat4(ball->s, "projection", projection);
     ball->x = 0.f;
     ball->y = 50.f;
     ball->w= 30.f;
@@ -72,9 +68,8 @@ void game_init() {
 
     plat = new Platform();
     plat->max_vel = 250.f;
-    plat->shader = new Shader("res/shaders/quad_default.vs", "res/shaders/quad_default.fs");
-    plat->shader->use();
-    plat->shader->setMat4("projection", projection);
+    shaderer_create_program(&plat->s, "res/shaders/quad_default.vs", "res/shaders/quad_default.fs");
+    shaderer_set_mat4(plat->s, "projection", projection);
     plat->w= 20.f;
     plat->h= 200.f;
     plat->y = HEIGHT / 2.f - plat->h / 2.f;
@@ -116,7 +111,6 @@ void game_init() {
 }
 
 void game_free() {
-    delete level_text_shader;
     delete ball;
     delete plat;
     delete game_state;
@@ -142,8 +136,7 @@ void game_update(float dt) {
     float frame_time = (float) glfwGetTime();
 
     // update time uniform even if game_state->game_over
-    level_text_shader->use();
-    level_text_shader->setFloat("time", frame_time);
+    shaderer_set_float(level_text_shader, "time", frame_time);
 
     // Reset game
 
@@ -237,8 +230,7 @@ void game_update(float dt) {
                 break;
             case 4:
                 ball->shake_strength += 0.002;
-                ball->shader->use();
-                ball->shader->setFloat("shake_strength", ball->shake_strength);
+                shaderer_set_float(ball->s, "shake_strength", ball->shake_strength);
                 // I still want to apply effect on the ball
                 ball->vy = sin(glm::radians(ball->rotation)) * ball->total_vel * -1; // * -1 because y is inverted
                 ball->angle_acc = ball->vy / 10.f;
@@ -278,9 +270,8 @@ void game_update(float dt) {
         game_state->level = 4;
         game_state->last_timestamp = frame_time;
         ball->color = glm::vec3(0.1f, 0.0f, 0.0f);
-        ball->shader->use();
-        ball->shader->setBool("shake", true);
-        ball->shader->setFloat("shake_strength", ball->shake_strength);
+        shaderer_set_int(ball->s, "shake", true);
+        shaderer_set_float(ball->s, "shake_strength", ball->shake_strength);
         std::cout << "LEVEL 4!" << std::endl;
         sound->leveled = true;
     } else if (game_state->level == 4 && ball->shake_strength > 0.020) {
@@ -291,8 +282,7 @@ void game_update(float dt) {
     }
 
     if (game_state->level >= 4) {
-        ball->shader->use();
-        ball->shader->setFloat("time", frame_time);
+        shaderer_set_float(ball->s, "time", frame_time);
     }
 
 
@@ -306,8 +296,7 @@ void game_update(float dt) {
         ball->vx = 0.f;
         ball->vy = 0.f;
         ball->total_vel = 0.f;
-        ball->shader->use();
-        ball->shader->setBool("shake", false);
+        shaderer_set_int(ball->s, "shake", false);
         ball->color = glm::vec3(0.8f, 0.8f, 0.8f);
 
         // game_over sound
@@ -341,10 +330,10 @@ void game_render(float dt) {
     float frame_time = (float) glfwGetTime();
 
     quad_render_add_queue(plat->x, plat->y, plat->w, plat->h, 0.0f, plat->color);
-    quad_render_draw(plat->shader);
+    quad_render_draw(plat->s);
 
     quad_render_add_queue(ball->x, ball->y, ball->w, ball->h, -glm::sign(ball->vx) * ball->rotation, ball->color);
-    quad_render_draw(ball->shader);
+    quad_render_draw(ball->s);
 
     Font* f = &text_renderer->fonts[0];
 

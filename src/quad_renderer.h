@@ -2,7 +2,7 @@
 #define QUAD_RENDERER_H
 
 #include "../include/glm/glm.hpp"
-#include "shader.h"
+#include "shaderer.h"
 
 struct RendererQuad {
     unsigned int vao;
@@ -15,6 +15,6 @@ void quad_render_init();
 
 void quad_render_add_queue(float x, float y, float w, float h, float r, glm::vec3 c);
 
-void quad_render_draw(Shader* shader);
+void quad_render_draw(Shader s);
 
 #endif

@@ -3,7 +3,7 @@
 
 #include "../include/stb_truetype.h"
 #include "../include/glm/glm.hpp"
-#include "shader.h"
+#include "shaderer.h"
 
 struct Font {
     const char* filename;
@@ -30,6 +30,6 @@ void text_render_create_font_atlas(Font* font);
 
 void text_render_add_queue(float x, float y, const char* text, glm::vec3 c, Font* font);
 
-void text_render_draw(Font* font, Shader* shader);
+void text_render_draw(Font* font, Shader s);
 
 #endif

@@ -1,35 +1,17 @@
 #include "../include/glad/glad.h"
-/* #include <GLFW/glfw3.h> */
 #include "../include/glfw3.h"
 
-#include <cstdio>
 #include <iostream>
-#include <map>
 #include <math.h>
-#include <pthread.h>
-
-/* #include <ft2build.h>  */ // Already included inside text_renderer.h
-/* #include FT_FREETYPE_H */
-// https://stackoverflow.com/questions/34910660/fatal-error-freetype-config-ftheader-h
-// https://stackoverflow.com/questions/12312034/freetype-library-and-undefined-reference-to-ft-init-freetype
 
 #include "globals.h"
 
-#include "../include/glm/common.hpp"
-#include "../include/glm/ext.hpp"
-
-/* #include "../include/stb_image.h" */
-#include "quad_renderer.h"
-#include "text_renderer.h"
 #define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
 #include "../include/stb_truetype.h"
-
-#define MINIAUDIO_IMPLEMENTATION
-#include "../include/miniaudio.h"
-
-#include "shader.h"
-#include "renderer.h"
 #include "game.h"
+
+
+// TODO: Compile into objects, and then link into executable
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
