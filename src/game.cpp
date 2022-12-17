@@ -9,18 +9,26 @@
 #include <iostream>
 #include <string>
 #include "math.h"
+#include "texturer.h"
 
 #include "globals.h"
 
 
+// TODO: Add spacial sound:
+//          when the ball bounces on the right, I want the sound to
+//          be heard from the right, and viceversa
+
 // Custom font for the change of level indication
 Shader level_text_shader;
 Shader default_text_shader;
+Shader tex_shader;
 
 Ball* ball;
 Platform* plat;
 GameState* game_state;
 SoundManager* sound;
+
+Texture* face_tex;
 
 void game_init() {
 
@@ -37,6 +45,9 @@ void game_init() {
     shaderer_create_program(&level_text_shader, "res/shaders/level_font.vs", "res/shaders/text_default.fs");
     shaderer_set_mat4(level_text_shader, "projection", projection);
 
+    shaderer_create_program(&tex_shader, "res/shaders/tex_default.vs", "res/shaders/tex_default.fs");
+    shaderer_set_mat4(tex_shader, "projection", projection);
+
     srand((unsigned)time(0));
 
     game_state = new GameState();
@@ -44,7 +55,7 @@ void game_init() {
     game_state->game_over = true;
     game_state->points = 0;
     game_state->lvl3_ball_touches = 0;
-    game_state->print_debug_info = true;
+    game_state->print_debug_info = false;
     game_state->projection = glm::ortho(0.0f, (float)WIDTH, (float)HEIGHT, 0.0f, -1.0f, 1.0f);
     game_state->was_debug_info_displayed = false;
     game_state->fps_counter = 0;
@@ -60,8 +71,8 @@ void game_init() {
     shaderer_set_mat4(ball->s, "projection", projection);
     ball->x = 0.f;
     ball->y = 50.f;
-    ball->w= 30.f;
-    ball->h= 30.f;
+    ball->w= 50.f;
+    ball->h= 50.f;
     ball->vx = cos(glm::radians(ball->rotation)) * ball->total_vel;
     ball->vy = sin(glm::radians(ball->rotation)) * ball->total_vel;
     ball->color = glm::vec3(0.2f, 0.8f, 0.2f);
@@ -107,7 +118,11 @@ void game_init() {
             &sound->game_over)) {
         std::cout << "[ERROR] Failed to load file \"game_over.wav\"." << std::endl;
     }
-    
+
+    // Textures
+    face_tex = (Texture*) malloc(sizeof(Texture));
+    texturer_create_texture(face_tex, "res/images/awesomeface.png");
+
 }
 
 void game_free() {
@@ -127,7 +142,7 @@ void game_update(float dt) {
     game_state->fps_time_from_last_update += dt;
     game_state->fps_counter++;
     if (game_state->fps_time_from_last_update > 1) {
-        game_state->fps_time_from_last_update -= 1;
+        game_state->fps_time_from_last_update -= 1.f;
         game_state->fps_displayed = game_state->fps_counter;
         game_state->fps_counter = 0;
     }
@@ -329,11 +344,33 @@ void game_render(float dt) {
 
     float frame_time = (float) glfwGetTime();
 
-    quad_render_add_queue(plat->x, plat->y, plat->w, plat->h, 0.0f, plat->color);
+    quad_render_add_queue(plat->x, plat->y,
+                          plat->w, plat->h,
+                          0.0f,
+                          plat->color);
     quad_render_draw(plat->s);
 
-    quad_render_add_queue(ball->x, ball->y, ball->w, ball->h, -glm::sign(ball->vx) * ball->rotation, ball->color);
-    quad_render_draw(ball->s);
+    // Normal unicolor quare ball
+    /* quad_render_add_queue(ball->x, ball->y, */
+    /*                           ball->w, ball->h, */
+    /*                           -glm::sign(ball->vx) * ball->rotation, */
+    /*                           ball->color); */
+    /* quad_render_draw(ball->s); */
+
+    float tx;
+    float tw;
+    if (ball->vx > 0) {
+        tx = 1.0f;
+        tw = -1.0f;
+    } else {
+        tx = 0.0f;
+        tw = 1.0f;
+    }
+    quad_render_add_queue_tex(ball->x, ball->y,
+                              ball->w, ball->h,
+                              -glm::sign(ball->vx) * ball->rotation,
+                              tx, 0.0f, tw, 1.0f);
+    quad_render_draw_tex(tex_shader, face_tex);
 
     Font* f = &text_renderer->fonts[0];
 

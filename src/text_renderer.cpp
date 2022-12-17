@@ -2,6 +2,7 @@
 #include "../include/glad/glad.h"
 
 #include "globals.h"
+#include "shaderer.h"
 
 #include <cstdio>
 #include <cstring>
@@ -156,6 +157,7 @@ void text_render_draw(Font* font, Shader s) {
 
     glUseProgram(s);
 
+    shaderer_set_int(s, "text", 0);
     glActiveTexture(GL_TEXTURE0);
 
     glBindVertexArray(text_renderer->vao);

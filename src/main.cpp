@@ -5,9 +5,6 @@
 #include <math.h>
 #include "globals.h"
 
-#define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate implementation
-#include "../include/stb_truetype.h"
-
 #include "game.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);

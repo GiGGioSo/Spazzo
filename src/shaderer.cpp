@@ -34,7 +34,7 @@ void shaderer_create_program(Shader* s, const char* vertexPath, const char* frag
         vertexCode = vShaderStream.str();
         fragmentCode = fShaderStream.str();
 
-    } catch (std::ifstream::failure e) {
+    } catch (std::ifstream::failure &e) {
         std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ:\n" << e.what() << std::endl;
     }
 
